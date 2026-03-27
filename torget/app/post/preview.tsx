@@ -53,7 +53,7 @@ export default function PostPreviewScreen() {
           Alert.alert('Publisert!', 'Annonsen din er nå synlig i feeden.', [
             {
               text: 'Se feed',
-              onPress: () => router.replace('/(tabs)/'),
+              onPress: () => router.replace('/(tabs)'),
             },
           ]);
         },

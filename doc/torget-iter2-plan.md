@@ -274,10 +274,11 @@ F1 og F2 kan startes parallelt. F3 avhenger av begge. F4 avhenger av F3. F5 avhe
 
 **Akseptansekriterier:**
 - [x] `@supabase/supabase-js` er fjernet fra `package.json` dependencies
-- [ ] `tsc --noEmit` passerer i `apps/mobile/` (ikke verifisert — torget/ er ikke i apps/mobile/ ennå)
+- [x] `tsc --noEmit` passerer — 0 feil (pre-eksisterende feil i preview.tsx også fikset)
 - [x] Alle unit-tester er oppdatert og passerer (39/39)
-- [ ] Appen starter uten feil mot kjørende Docker-stack (`npx expo start`) — manuell verifikasjon
-- [ ] Feed-skjermen laster annonser fra Fastify-APIet — manuell verifikasjon
+- [x] `EXPO_PUBLIC_API_URL` lagt til i torget/.env og .env.example
+- [ ] Appen starter uten feil mot kjørende Docker-stack — krever `docker compose up` + `npx expo start`
+- [ ] Feed-skjermen laster annonser fra Fastify-APIet — krever kjørende stack
 
 ---
 

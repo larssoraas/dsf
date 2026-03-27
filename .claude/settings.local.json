@@ -32,7 +32,10 @@
       "Bash(~/.nvm/versions/node/v20.20.2/bin/node /Users/larssoraas/Dev/2026/dsf/torget/node_modules/.bin/tsc --noEmit --project /Users/larssoraas/Dev/2026/dsf/torget/tsconfig.json)",
       "Bash(/Users/larssoraas/.nvm/versions/node/v22.14.0/bin/npx tsc:*)",
       "Bash(node -e \"const {execSync} = require\\(''child_process''\\); console.log\\(execSync\\(''which npx'', {encoding:''utf8''}\\)\\)\")",
-      "Bash(ls /usr/local/bin/node*)"
+      "Bash(ls /usr/local/bin/node*)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(source \"$NVM_DIR/nvm.sh\")",
+      "Bash(ls /Users/larssoraas/Dev/2026/dsf/torget/.env*)"
     ]
   }
 }
