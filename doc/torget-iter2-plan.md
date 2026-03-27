@@ -340,12 +340,14 @@ F1 og F2 kan startes parallelt. F3 avhenger av begge. F4 avhenger av F3. F5 avhe
 
 ## Fullstendige akseptansekriterier (iter2.md)
 
-- [ ] `docker compose up` starter alle tjenester uten feil
-- [ ] Expo-appen (web + native) viser feed uten innlogging
-- [ ] Bruker kan registrere seg og logge inn via Fastify-APIet
-- [ ] Innlogget bruker kan opprette annonse med bilder (MinIO-upload)
-- [ ] Innlogget bruker kan søke, filtrere og se detaljside
-- [ ] Innlogget bruker kan gi anmeldelse
-- [ ] Uinnlogget bruker møter auth-modal inline (ikke redirect) ved beskyttet handling
-- [ ] Alle eksisterende unit-tester (36 stk) er oppdatert og bestått
-- [ ] TypeScript kompilerer uten feil i både API og app (`tsc --noEmit`)
+- [x] `docker compose up` starter alle tjenester uten feil
+- [x] Expo-appen (web + native) viser feed uten innlogging
+- [x] Bruker kan registrere seg og logge inn via Fastify-APIet
+- [x] Innlogget bruker kan opprette annonse med bilder (MinIO-upload)
+- [x] Innlogget bruker kan søke, filtrere og se detaljside
+- [x] Innlogget bruker kan gi anmeldelse
+- [x] Uinnlogget bruker møter auth-modal inline (ikke redirect) ved beskyttet handling
+- [x] Alle unit-tester oppdatert og bestått (39/39)
+- [x] TypeScript kompilerer uten feil i både API og app (`tsc --noEmit`)
+
+**Testfix 2026-03-27:** Jest hoisting-bug i `listings.test.ts` — `MockApiError` definert utenfor mock-factory og dermed undefined pga. TDZ ved evaluering. Løsning: klasse definert inne i factory, hentet ut via `jest.requireMock()`.

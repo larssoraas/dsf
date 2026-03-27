@@ -12,11 +12,25 @@
 
 const mockApiGet = jest.fn();
 
-jest.mock('../../api', () => ({
-  api: {
-    get: (...args: unknown[]) => mockApiGet(...args),
-  },
-}));
+jest.mock('../../api', () => {
+  class ApiError extends Error {
+    status: number;
+    constructor(message: string, status: number) {
+      super(message);
+      this.name = 'ApiError';
+      this.status = status;
+    }
+  }
+  return {
+    api: {
+      get: (...args: unknown[]) => mockApiGet(...args),
+    },
+    ApiError,
+  };
+});
+
+// Retrieve ApiError from the mock so we can throw it in tests
+const MockApiError = (jest.requireMock('../../api') as { ApiError: new (message: string, status: number) => Error & { status: number } }).ApiError;
 
 import { fetchFeedListings, searchListings, fetchListingById } from '../listings';
 
@@ -191,7 +205,7 @@ describe('fetchListingById', () => {
   });
 
   it('returns null when api throws a 404 error', async () => {
-    mockApiGet.mockRejectedValue(new Error('404 not found'));
+    mockApiGet.mockRejectedValue(new MockApiError('Not found', 404));
 
     const result = await fetchListingById('nonexistent-id');
 

@@ -9,6 +9,7 @@
 const mockApiPost = jest.fn();
 const mockSetTokens = jest.fn();
 const mockClearTokens = jest.fn();
+const mockGetAccessToken = jest.fn();
 
 jest.mock('../../lib/api', () => ({
   api: {
@@ -16,12 +17,13 @@ jest.mock('../../lib/api', () => ({
   },
   setTokens: (...args: unknown[]) => mockSetTokens(...args),
   clearTokens: (...args: unknown[]) => mockClearTokens(...args),
+  getAccessToken: () => mockGetAccessToken(),
+  KEY_ACCESS: 'torget_access_token',
+  KEY_REFRESH: 'torget_refresh_token',
 }));
 
-const mockSecureStoreGetItem = jest.fn();
-
 jest.mock('expo-secure-store', () => ({
-  getItemAsync: (...args: unknown[]) => mockSecureStoreGetItem(...args),
+  getItemAsync: jest.fn(),
   setItemAsync: jest.fn(),
   deleteItemAsync: jest.fn(),
 }));
@@ -55,6 +57,7 @@ beforeEach(() => {
   });
   mockSetTokens.mockResolvedValue(undefined);
   mockClearTokens.mockResolvedValue(undefined);
+  mockGetAccessToken.mockResolvedValue(null); // default: no stored token
 });
 
 // ---- Tests ------------------------------------------------------------------
@@ -175,7 +178,7 @@ describe('useAuthStore — signOut', () => {
 describe('useAuthStore — initialize', () => {
   it('restores session from stored access token', async () => {
     const jwt = makeJwt('user-789', 'stored@example.com');
-    mockSecureStoreGetItem.mockResolvedValue(jwt);
+    mockGetAccessToken.mockResolvedValue(jwt);
 
     await useAuthStore.getState().initialize();
 
@@ -186,7 +189,7 @@ describe('useAuthStore — initialize', () => {
   });
 
   it('sets session to null when no stored token exists', async () => {
-    mockSecureStoreGetItem.mockResolvedValue(null);
+    mockGetAccessToken.mockResolvedValue(null);
 
     await useAuthStore.getState().initialize();
 
@@ -196,7 +199,7 @@ describe('useAuthStore — initialize', () => {
   });
 
   it('sets session to null when stored token has invalid JWT format', async () => {
-    mockSecureStoreGetItem.mockResolvedValue('not-a-jwt');
+    mockGetAccessToken.mockResolvedValue('not-a-jwt');
 
     await useAuthStore.getState().initialize();
 
@@ -207,7 +210,7 @@ describe('useAuthStore — initialize', () => {
 
   it('decodes JWT payload and sets user.id and user.email', async () => {
     const jwt = makeJwt('decoded-user', 'decoded@example.com');
-    mockSecureStoreGetItem.mockResolvedValue(jwt);
+    mockGetAccessToken.mockResolvedValue(jwt);
 
     await useAuthStore.getState().initialize();
 
