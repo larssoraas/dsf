@@ -102,6 +102,12 @@ export interface SearchParams {
   type?: ListingType;
 }
 
+export interface MapParams {
+  lat: number;
+  lng: number;
+  radius: number; // km
+}
+
 // Input types for mutations
 export interface CreateListingInput {
   title: string;
@@ -120,4 +126,25 @@ export interface CreateReviewInput {
   listingId: string;
   rating: number;
   comment?: string;
+}
+
+export interface Conversation {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  buyerId: string;
+  sellerId: string;
+  otherPartyName: string | null;
+  createdAt: string;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  type: 'message' | 'offer';
+  offerAmount: number | null;
+  offerStatus: 'accepted' | 'declined' | null;
+  createdAt: string;
 }

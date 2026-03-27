@@ -1,14 +1,15 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { db } from '../lib/db';
 import { listings, listingImages, profiles } from '../../drizzle/schema';
-import { eq, and, sql, gte, lte, ilike } from 'drizzle-orm';
+import { eq, and, sql, gte, lte, ilike, inArray } from 'drizzle-orm';
 import type { CreateListingInput, ListingCategory, ListingCondition, ListingType } from '@torget/shared';
 
 interface FeedQuery {
   page?: string;
   pageSize?: string;
-  userLat?: string;
-  userLng?: string;
+  lat?: string;
+  lng?: string;
+  radius?: string;
   type?: ListingType;
   category?: ListingCategory;
 }
@@ -42,21 +43,29 @@ export async function listingsRoutes(fastify: FastifyInstance): Promise<void> {
         Math.max(1, parseInt(request.query.pageSize ?? '20', 10)),
       );
       const offset = (page - 1) * pageSize;
-      const { userLat, userLng, type, category } = request.query;
+      const { lat: latStr, lng: lngStr, radius, type, category } = request.query;
 
       const hasCoordinates =
-        userLat !== undefined &&
-        userLng !== undefined &&
-        !isNaN(parseFloat(userLat)) &&
-        !isNaN(parseFloat(userLng));
+        latStr !== undefined &&
+        lngStr !== undefined &&
+        !isNaN(parseFloat(latStr)) &&
+        !isNaN(parseFloat(lngStr));
 
       if (hasCoordinates) {
         // Use PostGIS earthdistance for proximity sort
-        const lat = parseFloat(userLat!); // Non-null: checked by hasCoordinates
-        const lng = parseFloat(userLng!); // Non-null: checked by hasCoordinates
+        const lat = parseFloat(latStr!); // Non-null: checked by hasCoordinates
+        const lng = parseFloat(lngStr!); // Non-null: checked by hasCoordinates
 
         const typeFilter = type ? sql`AND l.listing_type = ${type}::listing_type` : sql``;
         const categoryFilter = category ? sql`AND l.category = ${category}::listing_category` : sql``;
+
+        const radiusKm = radius !== undefined && !isNaN(parseFloat(radius)) ? parseFloat(radius) : null;
+        const radiusFilter = radiusKm !== null
+          ? sql`AND l.location IS NOT NULL AND earth_distance(
+              ll_to_earth(${lat}, ${lng}),
+              ll_to_earth((l.location[1])::float, (l.location[0])::float)
+            ) <= ${radiusKm * 1000}`
+          : sql``;
 
         const rows = await db.execute<Record<string, unknown>>(sql`
           SELECT
@@ -74,8 +83,10 @@ export async function listingsRoutes(fastify: FastifyInstance): Promise<void> {
           LEFT JOIN profiles p ON p.id = l.seller_id
           LEFT JOIN listing_images li ON li.listing_id = l.id
           WHERE l.status = 'active'
+            AND l.location IS NOT NULL
             ${typeFilter}
             ${categoryFilter}
+            ${radiusFilter}
           GROUP BY l.id, p.id
           ORDER BY earth_distance(
             ll_to_earth(${lat}, ${lng}),
@@ -121,7 +132,7 @@ export async function listingsRoutes(fastify: FastifyInstance): Promise<void> {
           ? await db
               .select()
               .from(listingImages)
-              .where(sql`${listingImages.listingId} = ANY(${listingIds})`)
+              .where(inArray(listingImages.listingId, listingIds))
               .orderBy(listingImages.position)
           : [];
 
@@ -200,7 +211,7 @@ export async function listingsRoutes(fastify: FastifyInstance): Promise<void> {
           ? await db
               .select()
               .from(listingImages)
-              .where(sql`${listingImages.listingId} = ANY(${listingIds})`)
+              .where(inArray(listingImages.listingId, listingIds))
               .orderBy(listingImages.position)
           : [];
 
