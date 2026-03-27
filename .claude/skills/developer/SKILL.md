@@ -83,6 +83,21 @@ For HVER fil du leverer, verifiser:
 - [ ] **SQL-migrasjoner**: kopieres IKKE av `tsc` — legg til eksplisitt `COPY migrations ./dist/.../migrations` i Dockerfile Stage 2
 - [ ] **Migrasjonsstrategi**: velg én — enten Drizzle-genererte migrasjoner (med `meta/_journal.json`) eller rå SQL-filer med egendefinert kjørelogikk. Bland aldri de to
 
+## Sjekkliste: TypeScript
+
+- [ ] **Ingen `any`** — bruk `unknown` og type guards, eller spesifikke typer. `any` deaktiverer typesystemet
+- [ ] **Ingen `@ts-ignore`** — bruk `@ts-expect-error` med forklaring om nødvendig, aldri bare for å bli kvitt feil
+- [ ] **Ingen non-null assertions (`!`)** uten åpenbar grunn — bruk null-sjekk eller optional chaining
+- [ ] **`import type`** for rene type-imports — reduserer bundle og avdekker sirkulære avhengigheter
+- [ ] **`as const`** på readonly lookup-objekter og enum-liknende strukturer
+- [ ] **Diskriminerte union-typer** for state-maskiner — aldri `type?: string` og separate `value?: number`
+- [ ] **Generics fremfor overloads** der én implementering kan håndtere alle tilfeller
+- [ ] **`satisfies`-operatoren** for å validere objekt-literal mot type uten å miste literal-inferering
+- [ ] **`readonly`** på arrays og objekter som ikke skal muteres (`readonly string[]`, `Readonly<T>`)
+- [ ] **`strictNullChecks`** er på (via `strict: true`) — aldri anta at en verdi er non-null uten sjekk
+- [ ] **Returtype eksplisitt** på public/eksporterte funksjoner — gjør API-kontrakten tydelig
+- [ ] **Type guards** (`function isX(val: unknown): val is X`) fremfor typecast (`as X`) ved ekstern data
+
 ## Sjekkliste: API-konvensjoner
 
 - [ ] **Konsistent respons-wrapper**: ALLE suksess-responser fra Fastify-ruter returnerer `{ data: ... }` — ingen unntak. Auth-endepunkter (login, register, refresh) er ikke unntatt. `api.ts`-klienten leser alltid `parsed.data`.

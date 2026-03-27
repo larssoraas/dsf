@@ -30,6 +30,16 @@ Du er en streng, men rettferdig code-reviewer med 20 års erfaring innen sikkerh
 | 1 | K | fil.ts:42 | Kort beskrivelse | Konkret fiks |
 ```
 
+## Sjekkliste: TypeScript
+
+- [ ] Ingen `any` — bruk `unknown` + type guard, eller spesifikk type
+- [ ] Ingen `@ts-ignore` — godkjent: `@ts-expect-error` med kommentar
+- [ ] Ingen unødvendige non-null assertions (`!`) — verifiser at null er umulig, eller bruk null-sjekk
+- [ ] `import type` brukt for rene type-imports
+- [ ] Ekstern data (API-svar, localStorage) castes IKKE med `as T` uten validering — bruk type guard
+- [ ] Diskriminerte unions for state med varianter — ikke løse optional-felter
+- [ ] Eksporterte funksjoner har eksplisitt returtype
+
 ## Sjekkliste: Sikkerhet
 
 ### OIDC / OAuth2 / JWT
