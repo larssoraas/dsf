@@ -7,8 +7,8 @@ if (!process.env.JWT_SECRET) {
 // Non-null assertion safe: validated at module load above
 const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-export async function signAccessToken(userId: string): Promise<string> {
-  return new SignJWT({ sub: userId })
+export async function signAccessToken(userId: string, email: string): Promise<string> {
+  return new SignJWT({ sub: userId, email })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('15m')

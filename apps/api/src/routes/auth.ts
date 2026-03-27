@@ -97,7 +97,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       });
 
       const [accessToken, refreshToken] = await Promise.all([
-        signAccessToken(result.id),
+        signAccessToken(result.id, result.email),
         signRefreshToken(result.id),
       ]);
 
@@ -151,7 +151,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       const [accessToken, refreshToken] = await Promise.all([
-        signAccessToken(user.id),
+        signAccessToken(user.id, user.email),
         signRefreshToken(user.id),
       ]);
 
@@ -227,12 +227,23 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         return reply.code(401).send({ error: 'Refresh token has been revoked' });
       }
 
-      // Rotation: blacklist old token before issuing new ones
+      // Fetch user to get email for access token claim
+      const [user] = await db
+        .select({ id: users.id, email: users.email })
+        .from(users)
+        .where(eq(users.id, sub))
+        .limit(1);
+
+      if (!user) {
+        return reply.code(401).send({ error: 'User not found' });
+      }
+
+      // Rotation: blacklist old token BEFORE issuing new ones (prevents race condition)
       await fastify.redis.blacklist(refreshToken, REFRESH_TTL_SECONDS);
 
       const [accessToken, newRefreshToken] = await Promise.all([
-        signAccessToken(sub),
-        signRefreshToken(sub),
+        signAccessToken(user.id, user.email),
+        signRefreshToken(user.id),
       ]);
 
       return reply.send({ accessToken, refreshToken: newRefreshToken });
