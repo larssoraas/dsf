@@ -74,6 +74,9 @@ Du er en streng, men rettferdig code-reviewer med 20 års erfaring innen sikkerh
 - [ ] Bilde-upload: komprimering med expo-image-manipulator før Supabase Storage
 - [ ] Platform.OS brukt konsekvent for platform-spesifikk logikk
 - [ ] KeyboardAvoidingView rundt alle skjemaer
+- [ ] **Hermes-inkompatible API-er**: søk etter `FileReader`, `TextDecoder` i ny kode — bruk `arrayBuffer()` i stedet
+- [ ] **Postgres `point`-type**: verifiser at `(lng,lat)` tuple brukes — IKKE WKT `POINT(lng lat)`
+- [ ] **Nye Expo native-pakker**: alle brukte pakker finnes i `package.json` dependencies
 
 ## Sjekkliste: Supabase
 
@@ -84,6 +87,9 @@ Du er en streng, men rettferdig code-reviewer med 20 års erfaring innen sikkerh
 - [ ] Realtime-subscriptions unsubscribes i useEffect cleanup
 - [ ] Storage: filtype og størrelse validert på klienten før upload
 - [ ] Ingen sensitiv data (tokens, passord) logges eller vises i feilmeldinger
+- [ ] **Auth-avledet data**: felt som `reviewer_id`/`owner_id` settes IKKE fra klient — verifiser at de mangler fra insert-payload og at kolonnen har `DEFAULT auth.uid()`
+- [ ] **SECURITY DEFINER-funksjoner**: sjekk at `SET search_path = public` er satt (mangler = potensiell schema-injection)
+- [ ] **Supabase `error.message`**: sendes ALDRI direkte til UI — kun generisk melding til bruker + `console.error` for intern logging
 
 ## Defensiv dataaksess (nytt — fra Fase 3 retro)
 

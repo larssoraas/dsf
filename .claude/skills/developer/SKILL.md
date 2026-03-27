@@ -34,6 +34,7 @@ For HVER fil du leverer, verifiser:
 - [ ] Konfigurasjonsverdier valideres ved oppstart — ikke først ved bruk
 - [ ] Feilmeldinger til bruker inneholder aldri interne detaljer (tenant-ID, stack traces)
 - [ ] Nye valideringsfunksjoner kalles fra oppstartsflyten — ikke bare definert
+- [ ] Supabase `error.message` sendes ALDRI til bruker-UI — bruk alltid generisk melding + `console.error` for detaljer
 
 ## Sjekkliste: Defensiv dataaksess
 
@@ -64,6 +65,10 @@ For HVER fil du leverer, verifiser:
 - [ ] FlatList / FlashList for alle lister — aldri ScrollView + map for lange lister
 - [ ] Keyboard: `KeyboardAvoidingView` rundt skjemaer, `Keyboard.dismiss()` ved trykk utenfor
 - [ ] Bilder fra Supabase Storage: bruk signerte URL-er for private objekter
+- [ ] **Hermes**: bruk ALDRI `FileReader` — Hermes støtter den ikke. Bruk `response.arrayBuffer()` eller Expo FileSystem
+- [ ] **Postgres `point`-type**: bruk `(lng,lat)` tuple-format — IKKE WKT `POINT(lng lat)` (ugyldig for Postgres point)
+- [ ] **Auth-avledet data**: felt som `reviewer_id`, `owner_id`, `user_id` skal IKKE sendes fra klient — sett `DEFAULT auth.uid()` i DB og utelat fra insert-payload
+- [ ] **Nye Expo native-pakker**: legg alltid til i `package.json` dependencies umiddelbart ved import — ikke anta at expo install er nok
 
 ## Sjekkliste: Supabase
 
