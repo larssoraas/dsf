@@ -60,7 +60,28 @@ Orkestratoren holder konteksten LEAN:
    - Er avhengighetsgrafen korrekt?
    - Er tekniske valg konsistente med eksisterende stack?
    - Er det reelle risikoer som ikke er adressert?
-   Juster planen om nødvendig. Gå direkte til implementering.
+   Juster planen om nødvendig.
+
+6. Oppdater skills (orkestratoren gjør dette med Edit):
+   - .claude/skills/developer/SKILL.md:
+     * Teknisk stack og versjoner fra planen
+     * Prosjektspesifikke kodestandarder og mønstre
+     * Funksjonelle krav som påvirker implementeringsvalg
+     * Ikke-funksjonelle krav (ytelse, tilgjengelighet, sikkerhet)
+   - .claude/skills/reviewer/SKILL.md:
+     * Teknologispesifikke sjekkpunkter (f.eks. React-mønstre, API-kontrakter)
+     * Sikkerhetskrav fra planen
+     * Ytelseskrav og terskelverdier
+     * Arkitekturregler som skal håndheves
+   - .claude/skills/tester/SKILL.md:
+     * Testmiljø og oppstartkommandoer fra planen
+     * Kritiske brukerflyter som alltid skal testes
+     * Ikke-funksjonelle testkrav (ytelse, tilgjengelighet)
+   - .claude/skills/architect/SKILL.md (ved behov):
+     * Etablerte mønstre og beslutninger som ikke skal gjenåpnes
+   - Andre relevante skills ved behov
+   Mål: alle agenter opererer med samme tekniske og funksjonelle kontekst som planen.
+   Gå direkte til implementering.
 ```
 
 Ingen menneskelig godkjenning av plan. Orkestratoren vurderer selv.
