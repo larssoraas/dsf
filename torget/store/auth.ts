@@ -1,7 +1,5 @@
 import { create } from 'zustand';
-import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import { api, setTokens, clearTokens } from '../lib/api';
+import { api, setTokens, clearTokens, getAccessToken } from '../lib/api';
 import type { AuthTokens } from '../lib/types';
 
 interface SessionUser {
@@ -24,15 +22,6 @@ interface AuthActions {
 }
 
 type AuthStore = AuthState & AuthActions;
-
-const KEY_ACCESS = 'torget_access_token';
-
-async function readAccessToken(): Promise<string | null> {
-  if (Platform.OS === 'web') {
-    return Promise.resolve(sessionStorage.getItem(KEY_ACCESS));
-  }
-  return SecureStore.getItemAsync(KEY_ACCESS);
-}
 
 // Decode JWT payload (base64) to get user.id and email.
 // Client-side only — no signature verification.

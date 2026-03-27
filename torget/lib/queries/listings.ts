@@ -1,4 +1,4 @@
-import { api } from '../api';
+import { api, ApiError } from '../api';
 import type {
   ListingCategory,
   ListingCondition,
@@ -75,7 +75,7 @@ export async function fetchListingById(id: string): Promise<ListingWithDetails |
   try {
     return await api.get<ListingWithDetails>(`/listings/${id}`);
   } catch (err) {
-    if (err instanceof Error && err.message.includes('404')) {
+    if (err instanceof ApiError && err.status === 404) {
       return null;
     }
     console.error('[listings] fetchListingById error:', err);

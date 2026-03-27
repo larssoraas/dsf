@@ -3,8 +3,8 @@ import { Platform } from 'react-native';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-const KEY_ACCESS = 'torget_access_token';
-const KEY_REFRESH = 'torget_refresh_token';
+export const KEY_ACCESS = 'torget_access_token';
+export const KEY_REFRESH = 'torget_refresh_token';
 
 // ─── Secure storage (same pattern as lib/supabase.ts) ───────────────────────
 
@@ -43,7 +43,7 @@ export async function clearTokens(): Promise<void> {
   await storage.removeItem(KEY_REFRESH);
 }
 
-async function getAccessToken(): Promise<string | null> {
+export async function getAccessToken(): Promise<string | null> {
   return storage.getItem(KEY_ACCESS);
 }
 
@@ -111,6 +111,18 @@ async function refreshAccessToken(): Promise<string | null> {
     refreshPromise = null;
   });
   return refreshPromise;
+}
+
+// ─── ApiError ────────────────────────────────────────────────────────────────
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
 }
 
 // ─── Core fetch wrapper ──────────────────────────────────────────────────────
@@ -181,7 +193,7 @@ async function request<T>(
       // ignore parse errors
     }
     console.error(`[api] ${method} ${path} → ${response.status}:`, serverMessage);
-    throw new Error('Noe gikk galt. Prøv igjen.');
+    throw new ApiError('Noe gikk galt. Prøv igjen.', response.status);
   }
 
   // 204 No Content — return undefined cast to T

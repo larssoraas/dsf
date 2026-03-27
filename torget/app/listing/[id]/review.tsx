@@ -58,7 +58,7 @@ export default function ReviewScreen() {
   });
 
   const currentUserId = session?.user?.id;
-  const isSelfReview = currentUserId === listing?.seller_id;
+  const isSelfReview = currentUserId === listing?.sellerId;
 
   const handleSubmit = () => {
     if (isSelfReview) {
@@ -71,12 +71,12 @@ export default function ReviewScreen() {
       return;
     }
 
-    if (!listing?.seller_id) return;
+    if (!listing?.sellerId) return;
 
     createReview.mutate(
       {
-        reviewed_id: listing.seller_id,
-        listing_id: id,
+        reviewedId: listing.sellerId,
+        listingId: id,
         rating,
         comment: comment.trim() || undefined,
       },

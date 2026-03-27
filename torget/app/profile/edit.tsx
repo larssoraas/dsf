@@ -14,37 +14,15 @@ import {
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { useOwnProfile, useUpdateProfile } from '@/hooks/useProfile';
-import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/store/auth';
+import { uploadListingImage } from '@/lib/storage';
 
-const AVATAR_BUCKET = 'avatars';
 const AVATAR_MAX_WIDTH = 400;
 const AVATAR_COMPRESS = 0.8;
 
-async function uploadAvatar(uri: string, userId: string): Promise<string> {
-  const manipulated = await ImageManipulator.manipulateAsync(
-    uri,
-    [{ resize: { width: AVATAR_MAX_WIDTH } }],
-    { compress: AVATAR_COMPRESS, format: ImageManipulator.SaveFormat.JPEG },
-  );
-
-  const response = await fetch(manipulated.uri);
-  const arrayBuffer = await response.arrayBuffer();
-  const path = `${userId}/${Date.now()}.jpg`;
-
-  const { error } = await supabase.storage
-    .from(AVATAR_BUCKET)
-    .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: true });
-
-  if (error) {
-    console.error('[edit profile] avatar upload:', error.message);
-    throw new Error('Noe gikk galt. Prøv igjen.');
-  }
-
-  const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+async function uploadAvatar(uri: string): Promise<string> {
+  // Reuse the shared upload helper which handles resize+compress+auth
+  return uploadListingImage(uri, AVATAR_MAX_WIDTH, AVATAR_COMPRESS);
 }
 
 export default function EditProfileScreen() {
