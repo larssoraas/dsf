@@ -70,14 +70,20 @@ For HVER fil du leverer, verifiser:
 - [ ] **Auth-avledet data**: felt som `reviewer_id`, `owner_id`, `user_id` skal IKKE sendes fra klient — sett `DEFAULT auth.uid()` i DB og utelat fra insert-payload
 - [ ] **Nye Expo native-pakker**: legg alltid til i `package.json` dependencies umiddelbart ved import — ikke anta at expo install er nok
 
-## Sjekkliste: Supabase
+## Sjekkliste: Docker / Dockerfile
 
-- [ ] RLS er aktivert på alle tabeller — aldri skriv til DB uten RLS-policy
-- [ ] Auth: bruk `supabase.auth.getSession()` på oppstart, ikke `getUser()` (ekstra nettverkskall)
-- [ ] Realtime: unsubscribe i useEffect cleanup-funksjon
-- [ ] Storage: valider filtype og størrelse på klientsiden før upload
-- [ ] Typegenerering: kjør `supabase gen types` etter skjemaendringer, aldri skriv DB-typer manuelt
-- [ ] Transactions: bruk Supabase RPC-funksjoner for operasjoner som må være atomiske
+- [ ] **Build-kontekst**: hvis API-et bruker path aliases til delte pakker (f.eks. `@torget/shared`), sett `context: .` (repo-rot) i docker-compose og `dockerfile: apps/api/Dockerfile`
+- [ ] **npm install vs npm ci**: bruk `npm install` i Dockerfile hvis workspace ikke har egen `package-lock.json`
+- [ ] **tsc rootDir**: sett eksplisitt `rootDir` i `tsconfig.json`. Uten den infererer TypeScript rootDir fra alle inkluderte filer — path aliases til `../../packages/shared` gjør at rootDir settes til repo-rot, og output-stien blir `dist/apps/api/src/index.js`, IKKE `dist/index.js`
+- [ ] **CMD-sti**: verifiser at `CMD ["node", "dist/..."]` samsvarer med faktisk output-struktur (`tsc --listEmittedFiles` for å sjekke)
+- [ ] **SQL-migrasjoner**: kopieres IKKE av `tsc` — legg til eksplisitt `COPY migrations ./dist/.../migrations` i Dockerfile Stage 2
+- [ ] **Migrasjonsstrategi**: velg én — enten Drizzle-genererte migrasjoner (med `meta/_journal.json`) eller rå SQL-filer med egendefinert kjørelogikk. Bland aldri de to
+
+## Sjekkliste: Jest / Testing
+
+- [ ] **jest.mock() factory**: klasser som brukes i mock-factory (`jest.mock('...', () => ({ ... }))`) MÅ defineres inne i factory-funksjonen — `babel-plugin-jest-hoist` løfter `jest.mock()` over `class`-deklarasjoner og setter dem i TDZ
+- [ ] Hent klasser fra mock med `jest.requireMock('...')` etter factory-definisjonen for bruk i test-scope
+- [ ] `import type`-avhengigheter fra delte pakker krever ikke runtime-tilgang i tester — men factory-funksjonens closure evalueres ved modulinnlasting, ikke ved factory-definisjonstidspunktet
 
 ## Kvalitetskrav
 

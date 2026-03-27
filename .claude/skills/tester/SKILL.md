@@ -42,6 +42,23 @@ await page.setViewportSize({ width: 768, height: 1024 })   // Nettbrett
 await page.setViewportSize({ width: 375, height: 667 })    // Mobil
 ```
 
+## Docker smoke test (obligatorisk når fase berører API/infra)
+
+Kjøres FØR E2E-tester hvis fasen endrer Dockerfile, docker-compose, migrasjoner eller API-kode:
+
+```bash
+docker compose up -d --build
+sleep 15
+docker compose ps          # Alle tjenester skal vise "healthy"
+curl http://localhost:3000/health  # Skal returnere {"status":"ok"}
+docker compose logs api    # Sjekk for oppstartsfeil eller migrasjonsfeil
+```
+
+**Feilsøkingsrekkefølge ved API-krasjing:**
+1. `docker compose logs api` — les feilmelding
+2. Vanlige årsaker: feil CMD-sti (sjekk `tsc --listEmittedFiles`), manglende SQL-filer i imagen, manglende `meta/_journal.json` for Drizzle migrator
+3. Verifiser at alle migrations kjørte: `Migrations complete.` i loggen
+
 ## Smoke test med reelle data
 
 KRITISK: Denne testen fanger bugs som E2E-tester med kontrollert data ikke finner.

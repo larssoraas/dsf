@@ -98,6 +98,16 @@ Du er en streng, men rettferdig code-reviewer med 20 års erfaring innen sikkerh
 - [ ] Transaksjoner brukt der operasjoner må være atomiske (f.eks. register: user + profile)
 - [ ] PostGIS-extensions (`earthdistance`, `cube`) opprettet i migrasjonen
 - [ ] Sensitive felt (password_hash) aldri inkludert i SELECT-spørringer som returneres til klient
+- [ ] **Migrasjonsstrategi er konsistent**: enten Drizzle-generert (har `meta/_journal.json`) eller rå SQL med egendefinert runner — aldri begge deler i samme prosjekt
+- [ ] **Alle tabeller har en migrasjonsfil** — ikke bare extensions og triggers
+
+## Sjekkliste: Docker / Dockerfile
+
+- [ ] `CMD`-sti samsvarer med faktisk tsc-output (sjekk `outDir` + inferert `rootDir` i tsconfig)
+- [ ] SQL-migrasjoner og andre ikke-TS-filer er eksplisitt kopiert inn i Docker-imagen — `tsc` kopierer kun kompilerte `.js`-filer
+- [ ] Build-konteksten i docker-compose inkluderer alle path-aliaserte pakker (f.eks. `packages/shared`)
+- [ ] `npm ci` krever `package-lock.json` i build-konteksten — bruk `npm install` hvis den mangler
+- [ ] Token-lagring på web: `sessionStorage` — aldri `localStorage`
 
 ## Defensiv dataaksess (nytt — fra Fase 3 retro)
 
