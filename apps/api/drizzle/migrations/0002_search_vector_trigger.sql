@@ -15,6 +15,8 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS listings_search_vector_trigger ON listings;
+
 CREATE TRIGGER listings_search_vector_trigger
   BEFORE INSERT OR UPDATE OF title, description
   ON listings
