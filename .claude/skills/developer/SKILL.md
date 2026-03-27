@@ -69,7 +69,8 @@ For HVER fil du leverer, verifiser:
 - [ ] **Postgres `point`-type**: bruk `(lng,lat)` tuple-format — IKKE WKT `POINT(lng lat)` (ugyldig for Postgres point)
 - [ ] **Auth-avledet data**: felt som `reviewer_id`, `owner_id`, `user_id` skal IKKE sendes fra klient — sett `DEFAULT auth.uid()` i DB og utelat fra insert-payload
 - [ ] **Nye Expo native-pakker**: legg alltid til i `package.json` dependencies umiddelbart ved import — ikke anta at expo install er nok
-- [ ] **react-native-maps**: krever native rebuild — installer med `expo install react-native-maps`, start Expo med `--clear`. Web: vis fallback-tekst, ikke krasj.
+- [ ] **react-native-maps**: krever native rebuild — installer med `expo install react-native-maps`, start Expo med `--clear`. Web: bruk `.native.tsx`-fil for native-implementering + `metro.config.js` med `resolveRequest`-stub for web (Metro resolver følger alle `require()`-kall statisk uansett `Platform.OS`-guard)
+- [ ] **PostgreSQL numeric som string**: `NUMERIC`/`DECIMAL`-kolonner (f.eks. `avg_rating`) returneres som `string` fra `pg`-driveren, ikke `number`. Bruk alltid `Number(val)` før aritmetikk eller `.toFixed()`
 - [ ] **Lokasjon-parsing fra DB**: `listings.location` returneres som `"(lng,lat)"` string fra Postgres — parse med split, ikke anta objektformat
 - [ ] **JWT email-claim**: `signAccessToken(userId, email)` — access-token MÅ inkludere `email`-claim. Ved token-refresh: hent bruker fra DB for å populere email.
 
@@ -81,6 +82,10 @@ For HVER fil du leverer, verifiser:
 - [ ] **CMD-sti**: verifiser at `CMD ["node", "dist/..."]` samsvarer med faktisk output-struktur (`tsc --listEmittedFiles` for å sjekke)
 - [ ] **SQL-migrasjoner**: kopieres IKKE av `tsc` — legg til eksplisitt `COPY migrations ./dist/.../migrations` i Dockerfile Stage 2
 - [ ] **Migrasjonsstrategi**: velg én — enten Drizzle-genererte migrasjoner (med `meta/_journal.json`) eller rå SQL-filer med egendefinert kjørelogikk. Bland aldri de to
+
+## Sjekkliste: API-konvensjoner
+
+- [ ] **Konsistent respons-wrapper**: ALLE suksess-responser fra Fastify-ruter returnerer `{ data: ... }` — ingen unntak. Auth-endepunkter (login, register, refresh) er ikke unntatt. `api.ts`-klienten leser alltid `parsed.data`.
 
 ## Sjekkliste: Drizzle ORM
 
