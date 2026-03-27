@@ -5,7 +5,7 @@ import { ProfileHeader } from '../../components/profile/ProfileHeader';
 import { MyListings } from '../../components/listing/MyListings';
 
 export default function ProfileScreen() {
-  const { signOut, loading: authLoading } = useAuthStore();
+  const { signOut, isLoading: authLoading } = useAuthStore();
   const { data, isLoading, isError, refetch } = useOwnProfile();
 
   const handleSignOut = () => {

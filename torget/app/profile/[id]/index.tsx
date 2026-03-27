@@ -15,7 +15,7 @@ import { ReviewList } from '@/components/profile/ReviewList';
 import { useAuthStore } from '@/store/auth';
 import type { Listing } from '@/lib/types';
 
-function formatPrice(price: number | null, type: Listing['listing_type']): string {
+function formatPrice(price: number | null, type: Listing['listingType']): string {
   if (type === 'free') return 'Gratis';
   if (price === null) return 'Pris ikke oppgitt';
   return `${price.toLocaleString('nb-NO')} kr`;
@@ -35,7 +35,7 @@ function ActiveListingRow({ listing }: { listing: Listing }) {
         {listing.title}
       </Text>
       <Text style={styles.listingPrice}>
-        {formatPrice(listing.price, listing.listing_type)}
+        {formatPrice(listing.price, listing.listingType)}
       </Text>
     </TouchableOpacity>
   );
@@ -80,7 +80,7 @@ export default function PublicProfileScreen() {
   return (
     <>
       <Stack.Screen
-        options={{ title: profile.display_name, headerBackTitle: 'Tilbake' }}
+        options={{ title: profile.displayName ?? 'Profil', headerBackTitle: 'Tilbake' }}
       />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
@@ -100,7 +100,7 @@ export default function PublicProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Anmeldelser ({profile.review_count})
+            Anmeldelser ({profile.reviewCount})
           </Text>
           {reviewsQuery.isLoading ? (
             <ActivityIndicator size="small" color="#3b82f6" style={styles.reviewsLoader} />

@@ -1,15 +1,20 @@
 import * as ImageManipulator from 'expo-image-manipulator';
-import { api } from './api';
+import { getAccessToken } from './api';
 
-const MAX_WIDTH = 1200;
-const COMPRESS = 0.7;
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+const DEFAULT_MAX_WIDTH = 1200;
+const DEFAULT_COMPRESS = 0.7;
 
-export async function uploadListingImage(uri: string): Promise<string> {
+export async function uploadListingImage(
+  uri: string,
+  maxWidth = DEFAULT_MAX_WIDTH,
+  compress = DEFAULT_COMPRESS,
+): Promise<string> {
   try {
     const manipulated = await ImageManipulator.manipulateAsync(
       uri,
-      [{ resize: { width: MAX_WIDTH } }],
-      { compress: COMPRESS, format: ImageManipulator.SaveFormat.JPEG },
+      [{ resize: { width: maxWidth } }],
+      { compress, format: ImageManipulator.SaveFormat.JPEG },
     );
 
     // Read compressed file as ArrayBuffer — Hermes does not support FileReader
@@ -20,16 +25,7 @@ export async function uploadListingImage(uri: string): Promise<string> {
     const formData = new FormData();
     formData.append('image', blob, 'image.jpg');
 
-    // Use native fetch directly since api.post sets Content-Type to application/json
-    const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
-    const { getItem } = await import('expo-secure-store');
-    const { Platform } = await import('react-native');
-
-    const accessToken =
-      Platform.OS === 'web'
-        ? sessionStorage.getItem('torget_access_token')
-        : await getItem('torget_access_token');
-
+    const accessToken = await getAccessToken();
     const headers: Record<string, string> = {};
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`;

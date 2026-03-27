@@ -1,13 +1,8 @@
 // Domain types for torget/.
 //
-// These types now use camelCase to match the Fastify API responses
+// These types use camelCase to match the Fastify API responses
 // (mirroring packages/shared/types.ts which cannot be imported directly
 // since torget/ is not yet an npm workspace member).
-//
-// TECHNICAL DEBT: Component files (ListingCard, ListingDetail, etc.) still
-// reference the old snake_case field names (e.g. seller_id, display_name).
-// Those components will be migrated to camelCase in a follow-up. For now the
-// snake_case aliases below ensure nothing breaks.
 
 export type ListingCategory = 'electronics' | 'clothing' | 'furniture' | 'sports' | 'books' | 'other';
 export type ListingCondition = 'new' | 'like_new' | 'good' | 'used' | 'for_parts';

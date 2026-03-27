@@ -8,7 +8,7 @@ interface Props {
   closedListings: Listing[];
 }
 
-function formatPrice(price: number | null, type: Listing['listing_type']): string {
+function formatPrice(price: number | null, type: Listing['listingType']): string {
   if (type === 'free') return 'Gratis';
   if (price === null) return 'Pris ikke oppgitt';
   return `${price.toLocaleString('nb-NO')} kr`;
@@ -62,7 +62,7 @@ function ListingRow({ listing }: { listing: Listing }) {
           {listing.title}
         </Text>
         <Text style={[styles.meta, isClosed && styles.metaClosed]}>
-          {formatPrice(listing.price, listing.listing_type)} · {formatDate(listing.created_at)}
+          {formatPrice(listing.price, listing.listingType)} · {formatDate(listing.createdAt)}
         </Text>
       </View>
 

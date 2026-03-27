@@ -23,9 +23,9 @@ interface AuthActions {
 
 type AuthStore = AuthState & AuthActions;
 
-// Decode JWT payload (base64) to get user.id and email.
+// Decode JWT payload (base64) to get user.id, email, and expiry.
 // Client-side only — no signature verification.
-function decodeJwtPayload(token: string): { sub: string; email: string } | null {
+function decodeJwtPayload(token: string): { sub: string; email: string; exp?: number } | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
@@ -33,7 +33,11 @@ function decodeJwtPayload(token: string): { sub: string; email: string } | null 
     if (typeof payload?.sub !== 'string' || typeof payload?.email !== 'string') {
       return null;
     }
-    return { sub: payload.sub as string, email: payload.email as string };
+    return {
+      sub: payload.sub as string,
+      email: payload.email as string,
+      exp: typeof payload.exp === 'number' ? (payload.exp as number) : undefined,
+    };
   } catch {
     return null;
   }
@@ -121,13 +125,20 @@ export const useAuthStore = create<AuthStore>((set) => ({
   initialize: async () => {
     set({ isLoading: true });
     try {
-      const accessToken = await readAccessToken();
+      const accessToken = await getAccessToken();
       if (!accessToken) {
         set({ session: null, isLoading: false });
         return;
       }
       const payload = decodeJwtPayload(accessToken);
       if (!payload) {
+        await clearTokens();
+        set({ session: null, isLoading: false });
+        return;
+      }
+      // Reject expired tokens immediately
+      if (payload.exp !== undefined && Date.now() / 1000 > payload.exp) {
+        await clearTokens();
         set({ session: null, isLoading: false });
         return;
       }

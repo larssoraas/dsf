@@ -75,12 +75,12 @@ export default function ProfileReviewScreen() {
       return;
     }
 
-    // listing_id is required by schema — use a sentinel value for profile-level review
-    // Ideally the user would pick a specific listing, but we use reviewed_id as listing_id fallback
+    // listingId is required by schema — use a sentinel value for profile-level review
+    // Ideally the user would pick a specific listing, but we use reviewedId as listingId fallback
     createReview.mutate(
       {
-        reviewed_id: id,
-        listing_id: id,
+        reviewedId: id,
+        listingId: id,
         rating,
         comment: comment.trim() || undefined,
       },

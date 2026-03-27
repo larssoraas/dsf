@@ -25,13 +25,13 @@ function StarRating({ rating }: { rating: number }) {
 
 export function ProfileHeader({ profile, isOwnProfile }: Props) {
   const router = useRouter();
-  const initials = profile.display_name?.charAt(0)?.toUpperCase() ?? '?';
+  const initials = profile.displayName?.charAt(0)?.toUpperCase() ?? '?';
 
   return (
     <View style={styles.container}>
       <View style={styles.avatarContainer}>
-        {profile.avatar_url ? (
-          <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+        {profile.avatarUrl ? (
+          <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarFallback}>
             <Text style={styles.avatarInitials}>{initials}</Text>
@@ -39,16 +39,16 @@ export function ProfileHeader({ profile, isOwnProfile }: Props) {
         )}
       </View>
 
-      <Text style={styles.displayName}>{profile.display_name}</Text>
+      <Text style={styles.displayName}>{profile.displayName}</Text>
 
       {profile.city ? <Text style={styles.city}>{profile.city}</Text> : null}
 
       <View style={styles.ratingContainer}>
-        <StarRating rating={profile.avg_rating ?? 0} />
+        <StarRating rating={profile.avgRating ?? 0} />
         <Text style={styles.reviewCount}>
-          {profile.review_count === 1
+          {profile.reviewCount === 1
             ? '1 anmeldelse'
-            : `${profile.review_count} anmeldelser`}
+            : `${profile.reviewCount} anmeldelser`}
         </Text>
       </View>
 

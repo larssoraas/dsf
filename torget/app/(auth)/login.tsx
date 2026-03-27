@@ -15,7 +15,7 @@ import { useAuthStore } from '../../store/auth';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, loading, error, clearError } = useAuthStore();
+  const { signIn, isLoading: loading, error, clearError } = useAuthStore();
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) return;

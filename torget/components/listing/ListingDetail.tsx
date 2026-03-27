@@ -63,7 +63,7 @@ export function ListingDetail({ listing }: Props) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
-  const sortedImages = listing.listing_images
+  const sortedImages = listing.images
     .slice()
     .sort((a, b) => a.position - b.position);
 
@@ -116,8 +116,8 @@ export function ListingDetail({ listing }: Props) {
       <View style={styles.content}>
         {/* Badges row */}
         <View style={styles.badgeRow}>
-          <View style={[styles.badge, { backgroundColor: TYPE_COLORS[listing.listing_type] }]}>
-            <Text style={styles.badgeTextWhite}>{TYPE_LABELS[listing.listing_type]}</Text>
+          <View style={[styles.badge, { backgroundColor: TYPE_COLORS[listing.listingType] }]}>
+            <Text style={styles.badgeTextWhite}>{TYPE_LABELS[listing.listingType]}</Text>
           </View>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{CONDITION_LABELS[listing.condition]}</Text>
@@ -129,32 +129,32 @@ export function ListingDetail({ listing }: Props) {
 
         {/* Title and price */}
         <Text style={styles.title}>{listing.title}</Text>
-        <Text style={styles.price}>{formatPrice(listing.price, listing.listing_type)}</Text>
+        <Text style={styles.price}>{formatPrice(listing.price, listing.listingType)}</Text>
 
         {/* Seller snippet */}
         <View style={styles.sellerCard}>
           <View style={styles.sellerAvatar}>
-            {listing.profiles?.avatar_url ? (
+            {listing.profile?.avatarUrl ? (
               <Image
-                source={{ uri: listing.profiles.avatar_url }}
+                source={{ uri: listing.profile.avatarUrl }}
                 style={styles.avatarImage}
               />
             ) : (
               <View style={styles.avatarFallback}>
                 <Text style={styles.avatarFallbackText}>
-                  {listing.profiles?.display_name?.charAt(0)?.toUpperCase() ?? '?'}
+                  {listing.profile?.displayName?.charAt(0)?.toUpperCase() ?? '?'}
                 </Text>
               </View>
             )}
           </View>
           <View style={styles.sellerInfo}>
-            <Text style={styles.sellerName}>{listing.profiles?.display_name}</Text>
+            <Text style={styles.sellerName}>{listing.profile?.displayName}</Text>
             <View style={styles.sellerMeta}>
               <Text style={styles.sellerRating}>
-                {'★'} {listing.profiles?.avg_rating?.toFixed(1)}
+                {'★'} {listing.profile?.avgRating?.toFixed(1)}
               </Text>
-              {listing.profiles?.city ? (
-                <Text style={styles.sellerCity}> · {listing.profiles.city}</Text>
+              {listing.profile?.city ? (
+                <Text style={styles.sellerCity}> · {listing.profile.city}</Text>
               ) : null}
             </View>
           </View>
@@ -173,7 +173,7 @@ export function ListingDetail({ listing }: Props) {
           <Text style={styles.sectionTitle}>Detaljer</Text>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Lagt ut</Text>
-            <Text style={styles.detailValue}>{formatDate(listing.created_at)}</Text>
+            <Text style={styles.detailValue}>{formatDate(listing.createdAt)}</Text>
           </View>
           {listing.city ? (
             <View style={styles.detailRow}>
@@ -183,7 +183,7 @@ export function ListingDetail({ listing }: Props) {
           ) : null}
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Visninger</Text>
-            <Text style={styles.detailValue}>{listing.view_count}</Text>
+            <Text style={styles.detailValue}>{listing.viewCount}</Text>
           </View>
         </View>
 

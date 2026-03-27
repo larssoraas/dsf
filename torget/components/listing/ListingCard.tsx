@@ -35,7 +35,7 @@ function formatPrice(price: number | null, type: ListingType): string {
 
 export function ListingCard({ listing }: Props) {
   const router = useRouter();
-  const firstImage = listing.listing_images
+  const firstImage = listing.images
     .slice()
     .sort((a, b) => a.position - b.position)[0];
 
@@ -64,9 +64,9 @@ export function ListingCard({ listing }: Props) {
           </View>
         )}
         <View
-          style={[styles.typeBadge, { backgroundColor: TYPE_COLORS[listing.listing_type] }]}
+          style={[styles.typeBadge, { backgroundColor: TYPE_COLORS[listing.listingType] }]}
         >
-          <Text style={styles.typeBadgeText}>{TYPE_LABELS[listing.listing_type]}</Text>
+          <Text style={styles.typeBadgeText}>{TYPE_LABELS[listing.listingType]}</Text>
         </View>
       </View>
 
@@ -76,7 +76,7 @@ export function ListingCard({ listing }: Props) {
         </Text>
 
         <Text style={styles.price}>
-          {formatPrice(listing.price, listing.listing_type)}
+          {formatPrice(listing.price, listing.listingType)}
         </Text>
 
         <View style={styles.meta}>

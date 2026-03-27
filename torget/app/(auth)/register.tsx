@@ -18,7 +18,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
-  const { signUp, loading, error, clearError } = useAuthStore();
+  const { signUp, isLoading: loading, error, clearError } = useAuthStore();
 
   const handleSignUp = async () => {
     setLocalError(null);

@@ -27,7 +27,6 @@ async function uploadAvatar(uri: string): Promise<string> {
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const { session } = useAuthStore();
   const { data, isLoading } = useOwnProfile();
   const updateProfile = useUpdateProfile();
 
@@ -39,7 +38,7 @@ export default function EditProfileScreen() {
   // Populate fields once profile data loads
   useEffect(() => {
     if (data) {
-      setDisplayName(data.profile.display_name ?? '');
+      setDisplayName(data.profile.displayName ?? '');
       setCity(data.profile.city ?? '');
     }
   }, [data]);
@@ -75,15 +74,12 @@ export default function EditProfileScreen() {
       return;
     }
 
-    const userId = session?.user?.id;
-    if (!userId) return;
-
     let avatarUrl: string | undefined;
 
     if (avatarUri) {
       setUploadingAvatar(true);
       try {
-        avatarUrl = await uploadAvatar(avatarUri, userId);
+        avatarUrl = await uploadAvatar(avatarUri);
       } catch {
         Alert.alert('Feil', 'Noe gikk galt. Prøv igjen.');
         setUploadingAvatar(false);
@@ -94,9 +90,9 @@ export default function EditProfileScreen() {
 
     updateProfile.mutate(
       {
-        display_name: trimmedName,
+        displayName: trimmedName,
         city: city.trim() || undefined,
-        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+        ...(avatarUrl ? { avatarUrl } : {}),
       },
       {
         onSuccess: () => {
@@ -111,8 +107,8 @@ export default function EditProfileScreen() {
 
   const isBusy = uploadingAvatar || updateProfile.isPending;
 
-  const currentAvatarUrl = avatarUri ?? data?.profile?.avatar_url ?? null;
-  const initials = (displayName || (data?.profile?.display_name ?? '?'))
+  const currentAvatarUrl = avatarUri ?? data?.profile?.avatarUrl ?? null;
+  const initials = (displayName || (data?.profile?.displayName ?? '?'))
     .charAt(0)
     .toUpperCase();
 

@@ -14,17 +14,16 @@ const queryClient = new QueryClient({
 });
 
 function AuthGuard() {
-  const { session, loading, initialize } = useAuthStore();
+  const { session, isLoading, initialize } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = initialize();
-    return () => { unsubscribe.then(fn => fn()); };
+    void initialize();
   }, [initialize]);
 
   useEffect(() => {
-    if (loading) return;
+    if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
@@ -33,7 +32,7 @@ function AuthGuard() {
     } else if (session && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [session, loading, segments, router]);
+  }, [session, isLoading, segments, router]);
 
   return <Slot />;
 }

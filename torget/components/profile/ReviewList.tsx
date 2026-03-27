@@ -26,14 +26,14 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 function ReviewCard({ review }: { review: ReviewWithReviewer }) {
-  const initials = review.reviewer?.display_name?.charAt(0)?.toUpperCase() ?? '?';
+  const initials = review.reviewer?.displayName?.charAt(0)?.toUpperCase() ?? '?';
 
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <View style={styles.reviewerAvatar}>
-          {review.reviewer?.avatar_url ? (
-            <Image source={{ uri: review.reviewer.avatar_url }} style={styles.avatarImage} />
+          {review.reviewer?.avatarUrl ? (
+            <Image source={{ uri: review.reviewer.avatarUrl }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatarFallback}>
               <Text style={styles.avatarInitials}>{initials}</Text>
@@ -41,10 +41,10 @@ function ReviewCard({ review }: { review: ReviewWithReviewer }) {
           )}
         </View>
         <View style={styles.reviewerInfo}>
-          <Text style={styles.reviewerName}>{review.reviewer?.display_name}</Text>
+          <Text style={styles.reviewerName}>{review.reviewer?.displayName}</Text>
           <StarRow rating={review.rating} />
         </View>
-        <Text style={styles.reviewDate}>{formatDate(review.created_at)}</Text>
+        <Text style={styles.reviewDate}>{formatDate(review.createdAt)}</Text>
       </View>
       {review.comment ? <Text style={styles.comment}>{review.comment}</Text> : null}
     </View>
