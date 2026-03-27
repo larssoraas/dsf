@@ -59,6 +59,21 @@ docker compose logs api    # Sjekk for oppstartsfeil eller migrasjonsfeil
 2. Vanlige årsaker: feil CMD-sti (sjekk `tsc --listEmittedFiles`), manglende SQL-filer i imagen, manglende `meta/_journal.json` for Drizzle migrator
 3. Verifiser at alle migrations kjørte: `Migrations complete.` i loggen
 
+## Kritisk: Test auth-flyt gjennom klient-koden
+
+**Ikke nok å teste API med curl.** Curl omgår `api.ts`-klienten og avslører ikke:
+- Feil respons-format (`{ data: ... }` vs direkte objekt)
+- `atob()`/base64url-problemer i `decodeJwtPayload`
+- Token-lagring i `sessionStorage`/`SecureStore`
+
+**Obligatorisk** når fase berører auth (login, register, refresh):
+1. Åpne appen i nettleseren
+2. Fyll inn e-post og passord i login-skjemaet
+3. Verifiser at session settes (profil-fanen viser innlogget bruker)
+4. Test at auth-avhengige funksjoner faktisk fungerer (send melding, legg ut annonse)
+
+`curl`-testing er **supplement**, ikke erstatning for end-to-end via appen.
+
 ## Smoke test med reelle data
 
 KRITISK: Denne testen fanger bugs som E2E-tester med kontrollert data ikke finner.

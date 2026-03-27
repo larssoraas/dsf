@@ -143,6 +143,23 @@ Developer la til `UNIQUE`-constraint i SQL-migrasjonen men glemte tilsvarende `u
 
 **Tiltak:** Ny regel i developer-sjekklisten: bruk alltid positiv tilstandssjekk (`isBuyer = myId === buyerId`), aldri negativ (`isBuyer = myId !== sellerId`).
 
+### 4–6. Feil funnet utenfor Dark Factory (manuell testing)
+
+Tre bugs ble ikke fanget av verken developer, reviewer eller tester-agentene, og ble først oppdaget under manuell bruk av appen.
+
+| # | Bug | Rotårsak | Hvorfor ikke fanget |
+|---|-----|----------|---------------------|
+| 4 | `react-native-maps` krasjet web-bundleren | Metro resolver `require()` statisk uansett `Platform.OS`-guard; ingen `.native.tsx`-fil | Developer brukte `if (Platform.OS !== 'web')` men Metro ignorerer dette ved bundling. Reviewer og tester testet ikke web-start. |
+| 5 | `avgRating.toFixed is not a function` | `pg`-driveren returnerer `NUMERIC`-kolonner som `string`, ikke `number` | Ingen av agentene grep etter `.toFixed()`-kall på DB-felter. Type-systemet markerte ikke feilen siden `avgRating` var typet som `number \| null`. |
+| 6 | Innlogging fungerte aldri i appen | Auth-endpoints returnerte `{ accessToken, ... }` direkte, mens alle andre endepunkter og `api.ts`-klienten forventer `{ data: ... }` | Tester-agenten kjørte integrasjonstester med `curl` direkte mot API, ikke gjennom `api.ts`-klienten. Review sjekket ikke respons-format-konsistens på tvers av ruter. |
+
+**Konsekvens av bug #6:** Innlogging har aldri fungert i appen — ikke siden iter2. `tokens` var alltid `undefined`, som kastet `TypeError` som ble fanget og vist som "Noe gikk galt". Dette er den alvorligste post-factory-buggen da den blokkerte all autentisert funksjonalitet.
+
+**Tiltak implementert:**
+- `developer/SKILL.md`: react-native-maps `.native.tsx`-mønster, PostgreSQL NUMERIC→string-cast, `{ data: ... }`-wrapper for alle suksess-responser
+- `reviewer/SKILL.md`: NUMERIC→string-sjekk, respons-wrapper-konsistens på tvers av alle ruter
+- `tester/SKILL.md`: bør legge til end-to-end-test gjennom faktisk `api.ts`-klient (ikke bare curl)
+
 ---
 
 ## Prosessforbedringer implementert

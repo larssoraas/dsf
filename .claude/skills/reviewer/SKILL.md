@@ -91,6 +91,7 @@ Du er en streng, men rettferdig code-reviewer med 20 års erfaring innen sikkerh
 - [ ] MinIO-upload: filtype og størrelse validert server-side før lagring
 - [ ] Feilmeldinger til klient avslører aldri intern stack, DB-feil eller filstier
 - [ ] **Auth-avledet data**: felt som `reviewer_id`/`seller_id` settes i API fra JWT-payload — ikke fra request body
+- [ ] **Konsistent respons-wrapper**: ALLE suksess-responser returnerer `{ data: ... }` — inkludert auth-endepunkter (login, register, refresh). Klient-koden (`api.ts`) leser alltid `parsed.data`
 - [ ] **JWT email-claim**: `signAccessToken` inkluderer `email`-claim — verifiser at `decodeJwtPayload` på klientsiden kan hente email fra token
 - [ ] **Conversation deltaker-sjekk**: alle `/conversations/:id/*`-ruter sjekker `buyer_id = me OR seller_id = me` — 403 ellers
 - [ ] **Offer accept race condition**: `UPDATE messages SET offer_status = 'accepted' WHERE id = $1 AND offer_status IS NULL` — sikrer atomisk aksept
@@ -104,6 +105,7 @@ Du er en streng, men rettferdig code-reviewer med 20 års erfaring innen sikkerh
 - [ ] Sensitive felt (password_hash) aldri inkludert i SELECT-spørringer som returneres til klient
 - [ ] **Migrasjonsstrategi er konsistent**: enten Drizzle-generert (har `meta/_journal.json`) eller rå SQL med egendefinert runner — aldri begge deler i samme prosjekt
 - [ ] **Alle tabeller har en migrasjonsfil** — ikke bare extensions og triggers
+- [ ] **NUMERIC/DECIMAL → string**: `NUMERIC`-kolonner (f.eks. `avg_rating`) returneres som `string` av `pg`-driveren — søk etter `.toFixed()`, `toLocaleString()`, aritmetikk direkte på slike felt. Må castes med `Number()` først
 
 ## Sjekkliste: Docker / Dockerfile
 
