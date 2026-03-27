@@ -7,6 +7,7 @@ import {
   numeric,
   timestamp,
   index,
+  uniqueIndex,
   customType,
   check,
 } from 'drizzle-orm/pg-core';
@@ -140,6 +141,49 @@ export const reviews = pgTable(
   ]
 );
 
+export const conversations = pgTable(
+  'conversations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    listingId: uuid('listing_id')
+      .notNull()
+      .references(() => listings.id, { onDelete: 'cascade' }),
+    buyerId: uuid('buyer_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    sellerId: uuid('seller_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('conversations_buyer_idx').on(table.buyerId),
+    index('conversations_seller_idx').on(table.sellerId),
+    uniqueIndex('conversations_unique_idx').on(table.listingId, table.buyerId),
+  ]
+);
+
+export const messages = pgTable(
+  'messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversations.id, { onDelete: 'cascade' }),
+    senderId: uuid('sender_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    content: text('content').notNull(),
+    type: text('type').notNull().default('message'),
+    offerAmount: integer('offer_amount'),
+    offerStatus: text('offer_status'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index('messages_conversation_idx').on(table.conversationId, table.createdAt),
+  ]
+);
+
 // Type exports for use in route handlers
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -151,3 +195,7 @@ export type ListingImage = typeof listingImages.$inferSelect;
 export type NewListingImage = typeof listingImages.$inferInsert;
 export type Review = typeof reviews.$inferSelect;
 export type NewReview = typeof reviews.$inferInsert;
+export type Conversation = typeof conversations.$inferSelect;
+export type NewConversation = typeof conversations.$inferInsert;
+export type Message = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;

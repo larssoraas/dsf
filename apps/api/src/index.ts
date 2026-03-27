@@ -10,6 +10,7 @@ import { listingsRoutes } from './routes/listings';
 import { profilesRoutes } from './routes/profiles';
 import { reviewsRoutes } from './routes/reviews';
 import { uploadsRoutes } from './routes/uploads';
+import { conversationsRoutes } from './routes/conversations';
 
 const port = parseInt(process.env.API_PORT ?? '3000', 10);
 
@@ -51,6 +52,7 @@ async function start(): Promise<void> {
   await app.register(profilesRoutes, { prefix: '/profiles' });
   await app.register(reviewsRoutes); // Reviews use /profiles/:id/reviews + /reviews paths
   await app.register(uploadsRoutes, { prefix: '/uploads' });
+  await app.register(conversationsRoutes, { prefix: '/conversations' });
 
   app.get('/health', async () => {
     return { status: 'ok' };
