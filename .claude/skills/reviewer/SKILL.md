@@ -78,18 +78,26 @@ Du er en streng, men rettferdig code-reviewer med 20 års erfaring innen sikkerh
 - [ ] **Postgres `point`-type**: verifiser at `(lng,lat)` tuple brukes — IKKE WKT `POINT(lng lat)`
 - [ ] **Nye Expo native-pakker**: alle brukte pakker finnes i `package.json` dependencies
 
-## Sjekkliste: Supabase
+## Sjekkliste: Fastify API
 
-- [ ] RLS aktivert og policies testet for alle nye tabeller
-- [ ] Ingen direkte service role key i klientkode
-- [ ] Auth-state håndtert: loading, innlogget, ikke innlogget — alle tre tilstander
-- [ ] Supabase-klienten er singleton (importert fra `lib/supabase.ts`)
-- [ ] Realtime-subscriptions unsubscribes i useEffect cleanup
-- [ ] Storage: filtype og størrelse validert på klienten før upload
-- [ ] Ingen sensitiv data (tokens, passord) logges eller vises i feilmeldinger
-- [ ] **Auth-avledet data**: felt som `reviewer_id`/`owner_id` settes IKKE fra klient — verifiser at de mangler fra insert-payload og at kolonnen har `DEFAULT auth.uid()`
-- [ ] **SECURITY DEFINER-funksjoner**: sjekk at `SET search_path = public` er satt (mangler = potensiell schema-injection)
-- [ ] **Supabase `error.message`**: sendes ALDRI direkte til UI — kun generisk melding til bruker + `console.error` for intern logging
+- [ ] Alle beskyttede routes verifiserer JWT via `auth`-pluginen — ingen `preHandler` uteglemt
+- [ ] Eiersjekk på muterende operasjoner (`PATCH /listings/:id/sold` o.l.) — 403 hvis ikke eier
+- [ ] Fastify-skjema validering (`schema: { body: ... }`) på alle POST/PATCH-routes
+- [ ] Passord hashet med bcrypt — aldri lagret i klartekst, aldri returnert i respons
+- [ ] JWT-tokens ikke logget — heller ikke i feilmeldinger
+- [ ] Refresh token blacklistet i Redis ved logout
+- [ ] Token rotation ved refresh — gammelt token invalideres
+- [ ] Request-kø i `lib/api.ts` for token-refresh (forhindrer race condition)
+- [ ] MinIO-upload: filtype og størrelse validert server-side før lagring
+- [ ] Feilmeldinger til klient avslører aldri intern stack, DB-feil eller filstier
+- [ ] **Auth-avledet data**: felt som `reviewer_id`/`seller_id` settes i API fra JWT-payload — ikke fra request body
+
+## Sjekkliste: PostgreSQL / Drizzle
+
+- [ ] Drizzle-skjema bruker `.$type<>()` for enums — ikke rå strings
+- [ ] Transaksjoner brukt der operasjoner må være atomiske (f.eks. register: user + profile)
+- [ ] PostGIS-extensions (`earthdistance`, `cube`) opprettet i migrasjonen
+- [ ] Sensitive felt (password_hash) aldri inkludert i SELECT-spørringer som returneres til klient
 
 ## Defensiv dataaksess (nytt — fra Fase 3 retro)
 

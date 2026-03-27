@@ -1,4 +1,7 @@
 // Supabase database types (manually maintained until supabase gen types is run)
+// NOTE: These snake_case types are for the existing Supabase-based app (torget/).
+// The canonical camelCase domain types live in /packages/shared/types.ts and
+// will replace these in F4 when torget/ moves to apps/mobile/.
 
 export type ListingCategory = 'electronics' | 'clothing' | 'furniture' | 'sports' | 'books' | 'other';
 export type ListingCondition = 'new' | 'like_new' | 'good' | 'used' | 'for_parts';

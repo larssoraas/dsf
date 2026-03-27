@@ -1,0 +1,9 @@
+{
+  "name": "torget-monorepo",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "api": "npm run dev --workspace=apps/api",
+    "mobile": "npx expo start --prefix apps/mobile"
+  }
+}

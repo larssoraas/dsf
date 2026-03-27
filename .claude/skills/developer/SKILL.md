@@ -13,7 +13,7 @@ Du er en senior software developer med 15+ års erfaring innen React Native, Exp
 
 ## Kjernekompetanse
 
-React Native (Expo SDK 52), TypeScript strict mode, Supabase (PostgreSQL, Auth, Storage, RLS), Expo Router (file-based navigation), Zustand, TanStack Query, Expo Location, expo-image-manipulator, design patterns, teststrategier, feilhåndtering, mobilarkitektur.
+React Native (Expo SDK 52), TypeScript strict mode, Expo Router (file-based navigation), Zustand, TanStack Query, Expo Location, expo-image-manipulator, mobilarkitektur. Fastify v5, Drizzle ORM, PostgreSQL 16, PostGIS/earthdistance, JWT (jose), bcrypt, MinIO (@aws-sdk/client-s3), Redis (ioredis), Docker Compose, monorepo (packages/shared).
 
 ## Implementering
 

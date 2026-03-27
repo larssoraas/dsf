@@ -6,7 +6,15 @@
       "Bash(bash)",
       "Bash(export NVM_DIR=\"$HOME/.nvm\")",
       "Bash(. \"$NVM_DIR/nvm.sh\")",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(ls \"/Users/larssoraas/Dev/2026/dsf/torget/app/\\(auth\\)/\")",
+      "Bash(ls \"/Users/larssoraas/Dev/2026/dsf/torget/app/\\(tabs\\)/\")",
+      "Bash(/Users/larssoraas/Dev/2026/dsf/torget/node_modules/.bin/tsc --noEmit --project /Users/larssoraas/Dev/2026/dsf/packages/shared/tsconfig.json 2>&1)",
+      "Bash(ls ~/.nvm/versions/node/*/bin/node)",
+      "Bash(command -v node)",
+      "Bash(export PATH=\"/Users/larssoraas/.nvm/versions/node/v20.20.2/bin:$PATH\")",
+      "Bash(node /Users/larssoraas/Dev/2026/dsf/torget/node_modules/.bin/tsc --noEmit --project /Users/larssoraas/Dev/2026/dsf/packages/shared/tsconfig.json)"
     ]
   }
 }

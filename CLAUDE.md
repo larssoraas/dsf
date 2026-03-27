@@ -19,11 +19,17 @@ Posisjonering: *"Det lokale torget — i lomma di."*
 ### Stack
 
 - **Frontend:** React Native + Expo SDK 52, Expo Router (file-based), TypeScript strict
-- **Backend:** Supabase — PostgreSQL, Auth (e-post/passord), Storage
+- **Backend:** Fastify v5 + TypeScript — selvhostet, kjøres i Docker
+- **Database:** PostgreSQL 16 med PostGIS (Docker-image: `postgis/postgis:16-3.4`)
+- **ORM:** Drizzle ORM + Drizzle Kit
+- **Auth:** JWT (jose) — access token 15 min, refresh token 7 dager, Redis-blacklist
+- **Fillagring:** MinIO (S3-kompatibel, selvhostet i Docker)
+- **Cache:** Redis 7
 - **State:** Zustand (UI-state) + TanStack Query (server-state/cache)
-- **Søk:** Supabase full-text search (tsvector) — ingen ekstern søketjeneste i MVP
+- **Søk:** PostgreSQL full-text search (tsvector/websearch) — ingen ekstern søketjeneste
 - **Lokasjon:** Expo Location + PostGIS (earthdistance) for nærhet-sortering
-- **Bilder:** Supabase Storage, komprimert via expo-image-manipulator
+- **Bilder:** MinIO via `@aws-sdk/client-s3`, komprimert via expo-image-manipulator
+- **Monorepo:** `apps/api/`, `apps/mobile/`, `packages/shared/`
 
 ### Designretning
 
@@ -31,7 +37,8 @@ Mobile-first. Enkel, rask annonsering (< 60 sek fra åpne app til publisert). Lo
 
 ### Faser
 
-- **MVP**: Annonsering (CRUD), feed, fritekst-søk, brukerprofil
+- **MVP** ✅: Annonsering (CRUD), feed, fritekst-søk, brukerprofil (Supabase-basert)
+- **Iter2** 🔄: Docker-stack (Fastify + PostgreSQL + MinIO + Redis), anonym browsing uten innlogging
 - **V2**: Kartsøk, meldingssystem, budfunksjon
 - **V3**: Vipps-betaling, BankID-verifisering, push-varsler
 
@@ -273,10 +280,30 @@ Mål tid for alle steg med `date +%s`. Presenter tabell etter fullført pipeline
 ## Kommandoer
 
 ```bash
-npx expo start           # Start Expo dev-server
-npx expo start --ios     # Start på iOS simulator
-npx expo start --android # Start på Android emulator
-npx jest --watchAll=false # Kjør unit-tester
-npx tsc --noEmit         # TypeScript typesjekk
-supabase gen types typescript --local > lib/types.ts  # Generer DB-typer
+# Docker
+docker compose up -d              # Start alle tjenester (postgres, api, minio, redis)
+docker compose down               # Stop alle tjenester
+docker compose logs -f api        # Følg API-logger
+
+# API (apps/api/)
+npm run dev --workspace=apps/api  # Start API med hot reload
+npm run migrate --workspace=apps/api  # Kjør DB-migrasjoner
+npm test --workspace=apps/api     # Kjør API-tester
+
+# Mobilapp (apps/mobile/ etter F4, torget/ nå)
+cd apps/mobile && npx expo start        # Start Expo dev-server
+cd apps/mobile && npx expo start --ios  # Start på iOS simulator
+cd apps/mobile && npx expo start --android # Start på Android emulator
+cd torget && npx expo start             # Start fra eksisterende plassering (før F4)
+
+# Testing og typesjekk
+npm test --workspace=apps/api         # API unit-tester
+cd torget && npx jest --watchAll=false # App unit-tester (før F4)
+cd apps/api && npx tsc --noEmit       # TypeScript typesjekk (API)
+cd torget && npx tsc --noEmit         # TypeScript typesjekk (app, før F4)
+
+# Drizzle
+cd apps/api && npx drizzle-kit generate  # Generer migrasjoner fra skjema
+cd apps/api && npx drizzle-kit push      # Push skjema direkte til DB (dev)
+cd apps/api && npx drizzle-kit studio    # Drizzle Studio (DB-utforsker)
 ```

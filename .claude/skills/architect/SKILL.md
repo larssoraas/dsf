@@ -20,11 +20,18 @@ React Native (Expo SDK 52), Supabase, TypeScript strict mode, mobilarkitektur, o
 | Beslutning | Valg |
 |-----------|------|
 | Frontend | React Native + Expo SDK 52 |
-| Backend | Supabase (PostgreSQL + Auth + Storage) |
-| Søk (MVP) | Supabase full-text search (tsvector) |
+| Backend (iter2) | Fastify v5 + TypeScript — erstatter Supabase |
+| Database | PostgreSQL 16 i Docker (postgis/postgis:16-3.4) |
+| ORM | Drizzle ORM + Drizzle Kit |
+| Auth | JWT (jose) + bcrypt — access 15 min, refresh 7 dager |
+| Fillagring | MinIO (S3-kompatibel) i Docker |
+| Cache/blacklist | Redis i Docker |
+| Søk | PostgreSQL tsvector (websearch) |
 | Lokasjon | Expo Location + PostGIS earthdistance |
 | State | Zustand (UI) + TanStack Query (server) |
 | Navigasjon | Expo Router (file-based) |
+| Struktur | Monorepo: apps/api/, apps/mobile/, packages/shared/ |
+| Anonym browsing | Ingen auth-gate ved oppstart — modal inline ved beskyttet handling |
 
 ## Oppgave
 
