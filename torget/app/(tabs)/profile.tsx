@@ -1,12 +1,23 @@
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useAuthStore } from '../../store/auth';
 import { useOwnProfile } from '../../hooks/useProfile';
 import { ProfileHeader } from '../../components/profile/ProfileHeader';
 import { MyListings } from '../../components/listing/MyListings';
+import { AuthModal } from '../../components/auth/AuthModal';
 
 export default function ProfileScreen() {
-  const { signOut, isLoading: authLoading } = useAuthStore();
+  const { session, signOut, isLoading: authLoading } = useAuthStore();
   const { data, isLoading, isError, refetch } = useOwnProfile();
+  const [showAuth, setShowAuth] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert('Logg ut', 'Er du sikker på at du vil logge ut?', [
@@ -14,6 +25,32 @@ export default function ProfileScreen() {
       { text: 'Logg ut', style: 'destructive', onPress: signOut },
     ]);
   };
+
+  if (!session) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.heading}>Profil</Text>
+        <Text style={styles.body}>
+          Logg inn for å se profilen din, dine annonser og anmeldelser.
+        </Text>
+        <TouchableOpacity
+          style={styles.authButton}
+          onPress={() => setShowAuth(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Logg inn eller registrer deg"
+          testID="profile-auth-button"
+        >
+          <Text style={styles.authButtonText}>Logg inn / Registrer</Text>
+        </TouchableOpacity>
+        <AuthModal
+          visible={showAuth}
+          onClose={() => setShowAuth(false)}
+          onSuccess={() => setShowAuth(false)}
+          message="Logg inn for å se profilen din"
+        />
+      </View>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -71,6 +108,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
     backgroundColor: '#f9fafb',
+  },
+  heading: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  body: {
+    fontSize: 15,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 28,
+    lineHeight: 22,
+  },
+  authButton: {
+    backgroundColor: '#3b82f6',
+    borderRadius: 10,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+  },
+  authButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   errorTitle: {
     fontSize: 17,

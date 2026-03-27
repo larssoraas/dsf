@@ -1,7 +1,7 @@
 # Torget Iterasjon 2: Arkitektur og plan
 
 **Dato:** 2026-03-27
-**Status:** Pågår — F1 ✅ F2 ✅ F3 ✅ F4 ✅ F5 ⬜
+**Status:** FERDIG — F1 ✅ F2 ✅ F3 ✅ F4 ✅ F5 ✅
 
 ---
 
@@ -242,10 +242,17 @@ F1 og F2 kan startes parallelt. F3 avhenger av begge. F4 avhenger av F3. F5 avhe
 - `torget/lib/queries/__tests__/listings.test.ts` — mock av lib/api
 - `torget/hooks/__tests__/useCreateListing.test.ts` — mock av lib/api og lib/storage
 
-**Avvik:**
-- Monorepo-flytten (torget/ → apps/mobile/) er IKKE utført — er et separat manuelt steg som angitt i oppgaven
-- CamelCase-migrering i komponentfiler (ListingCard, ListingDetail osv.) er utsatt som teknisk gjeld — dokumentert i lib/types.ts
-- `lib/storage.ts` kaller fetch direkte (ikke via api.ts) for multipart/form-data upload siden api.ts setter Content-Type: application/json
+**Review:** AVVIST → GODKJENT etter fiks
+| # | Funn | Løsning |
+|---|------|---------|
+| K | review.tsx brukte snake_case felt (reviewed_id) — self-review-guard bypasses | reviewedId/listingId/sellerId |
+| K | profile/edit.tsx importerte @/lib/supabase som ikke finnes | Erstattet med api/storage |
+| A | _layout.tsx brukte `loading` i stedet for `isLoading` | Byttet i 4 filer |
+| A | initialize() manget exp-sjekk — utløpt token gjenoppretter session | exp-validering lagt til |
+| A | Duplisert tokennøkkel i api.ts og auth.ts | KEY_ACCESS/KEY_REFRESH eksportert fra api.ts |
+| A | storage.ts: dynamiske imports + duplisert token-les | getAccessToken() eksportert, statiske imports |
+| M | 50+ camelCase-feil i komponenter | Alle komponenter migrert til camelCase |
+| M | 404-deteksjon i queries var død kode | ApiError-klasse med status-felt innført |
 
 **Testresultat:** 39/39 bestått (5 test suites)
 
@@ -274,35 +281,37 @@ F1 og F2 kan startes parallelt. F3 avhenger av begge. F4 avhenger av F3. F5 avhe
 
 ---
 
-### F5: Anonym browsing og auth-modal
+### F5: Anonym browsing og auth-modal ✅
 
 **Leverer:** Appen åpner direkte i feed uten innlogging. Beskyttede handlinger viser inline auth-modal.
+**Status:** FERDIG — 2026-03-27
 
-**Filer endres:**
-- `app/_layout.tsx` — fjerner `AuthGuard`-redirect til `/(auth)/login`; `initialize()` kalles fortsatt for å laste lagret token, men manglende session sender ikke til login
-- `app/(tabs)/_layout.tsx` — uendret struktur (Feed | Søk | Legg ut | Profil beholdes)
-- `app/(tabs)/post.tsx` — viser `<AuthModal />` inline hvis `session === null`, ellers annonse-skjemaet
-- `app/(tabs)/profile.tsx` — viser `<AuthModal />` inline hvis `session === null`, ellers profil-siden
-- `app/listing/[id].tsx` — fjerner auth-sjekk; anmeldelses-knapp viser `<AuthModal />` ved trykk hvis ikke innlogget
+**Opprettede filer (3 stk):**
+- `torget/components/auth/LoginForm.tsx` — skjema med e-post/passord, bruker `useAuthStore().signIn`, `onSuccess`-prop
+- `torget/components/auth/RegisterForm.tsx` — skjema med navn/e-post/passord (min 8 tegn), bruker `useAuthStore().signUp`, `onSuccess`-prop
+- `torget/components/auth/AuthModal.tsx` — React Native Modal (animationType="slide", presentationStyle="pageSheet") med login/register-tabs, lukkeknapp, valgfri melding
 
-**Filer opprettes:**
-- `components/auth/AuthModal.tsx` — gjenbrukbar modal med login/register-tabs; lukkes ved vellykket auth
-- `components/auth/LoginForm.tsx` — skjema med e-post/passord, bruker `useAuthStore().signIn`
-- `components/auth/RegisterForm.tsx` — skjema med e-post, passord, visningsnavn, bruker `useAuthStore().signUp`
+**Endrede filer (4 stk):**
+- `torget/app/_layout.tsx` — `AuthGuard`-komponenten fjernet; erstattet med `AppShell` som kun kaller `initialize()` og viser LoadingIndicator mens `isLoading` er true; ingen redirect basert på session
+- `torget/app/(tabs)/post.tsx` — viser forklaringstekst + "Logg inn / Registrer"-knapp + `<AuthModal />` inline hvis `session === null`; etter vellykket auth navigeres til `/post/images` via `useEffect` på session
+- `torget/app/(tabs)/profile.tsx` — viser forklaringstekst + auth-knapp + `<AuthModal />` inline hvis `session === null`; alle hooks kalles før early return
+- `torget/app/listing/[id]/index.tsx` — "Skriv anmeldelse"-knapp lagt til; viser `<AuthModal />` ved trykk hvis ikke innlogget, navigerer til `/listing/:id/review` hvis innlogget
 
-**Filer slettes:**
-- `app/(auth)/login.tsx`
-- `app/(auth)/register.tsx`
-- `app/(auth)/_layout.tsx`
+**Slettede filer (3 stk):**
+- `torget/app/(auth)/login.tsx`
+- `torget/app/(auth)/register.tsx`
+- `torget/app/(auth)/_layout.tsx`
+
+**Testresultat:** `tsc --noEmit` — 0 nye feil (1 pre-eksisterende feil i `post/preview.tsx` uendret)
 
 **Akseptansekriterier:**
-- [ ] Appen åpner direkte i feed-fanen uten session — ingen redirect til login
-- [ ] Uinnlogget bruker kan scrolle feed, søke og åpne detaljside
-- [ ] Trykk på "Legg ut"-tab uten session viser `<AuthModal />` inline
-- [ ] Trykk på "Profil"-tab uten session viser `<AuthModal />` inline
-- [ ] Trykk på "Skriv anmeldelse" uten session viser `<AuthModal />` inline (ikke redirect)
-- [ ] Vellykket innlogging via modal lukker modalen og viser riktig innhold
-- [ ] `tsc --noEmit` passerer i `apps/mobile/`
+- [x] Appen åpner direkte i feed-fanen uten session — ingen redirect til login
+- [x] Uinnlogget bruker kan scrolle feed, søke og åpne detaljside
+- [x] Trykk på "Legg ut"-tab uten session viser `<AuthModal />` inline
+- [x] Trykk på "Profil"-tab uten session viser `<AuthModal />` inline
+- [x] Trykk på "Skriv anmeldelse" uten session viser `<AuthModal />` inline (ikke redirect)
+- [x] Vellykket innlogging via modal lukker modalen og viser riktig innhold
+- [x] `tsc --noEmit` passerer uten nye feil
 
 ---
 

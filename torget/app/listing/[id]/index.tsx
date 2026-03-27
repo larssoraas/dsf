@@ -1,17 +1,31 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { fetchListingById } from '@/lib/queries/listings';
 import { ListingDetail } from '@/components/listing/ListingDetail';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { useAuthStore } from '@/store/auth';
 
 export default function ListingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const { session } = useAuthStore();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const { data: listing, isLoading, isError } = useQuery({
     queryKey: ['listing', id],
     queryFn: () => fetchListingById(id),
     enabled: Boolean(id),
   });
+
+  const handleReviewPress = () => {
+    if (!session) {
+      setShowAuthModal(true);
+    } else {
+      router.push(`/listing/${id}/review`);
+    }
+  };
 
   return (
     <>
@@ -42,7 +56,29 @@ export default function ListingScreen() {
         </View>
       )}
 
-      {listing && <ListingDetail listing={listing} />}
+      {listing && (
+        <>
+          <ListingDetail listing={listing} />
+          <View style={styles.reviewButtonContainer}>
+            <TouchableOpacity
+              style={styles.reviewButton}
+              onPress={handleReviewPress}
+              accessibilityRole="button"
+              accessibilityLabel="Skriv anmeldelse"
+              testID="review-button"
+            >
+              <Text style={styles.reviewButtonText}>Skriv anmeldelse</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+
+      <AuthModal
+        visible={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => setShowAuthModal(false)}
+        message="Logg inn for å skrive en anmeldelse"
+      />
     </>
   );
 }
@@ -66,5 +102,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9ca3af',
     textAlign: 'center',
+  },
+  reviewButtonContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  reviewButton: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  reviewButtonText: {
+    color: '#374151',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
+import { Slot } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../store/auth';
@@ -13,26 +14,20 @@ const queryClient = new QueryClient({
   },
 });
 
-function AuthGuard() {
-  const { session, isLoading, initialize } = useAuthStore();
-  const segments = useSegments();
-  const router = useRouter();
+function AppShell() {
+  const { isLoading, initialize } = useAuthStore();
 
   useEffect(() => {
     void initialize();
   }, [initialize]);
 
-  useEffect(() => {
-    if (isLoading) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (!session && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (session && inAuthGroup) {
-      router.replace('/(tabs)');
-    }
-  }, [session, isLoading, segments, router]);
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
 
   return <Slot />;
 }
@@ -41,7 +36,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style="auto" />
-      <AuthGuard />
+      <AppShell />
     </QueryClientProvider>
   );
 }
