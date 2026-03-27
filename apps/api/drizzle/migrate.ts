@@ -1,6 +1,5 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
+import fs from 'fs';
 import path from 'path';
 
 export async function runMigrations(): Promise<void> {
@@ -10,15 +9,26 @@ export async function runMigrations(): Promise<void> {
   }
 
   const pool = new Pool({ connectionString: databaseUrl });
-  const db = drizzle(pool);
 
-  console.log('Running database migrations...');
-  await migrate(db, {
-    migrationsFolder: path.join(__dirname, 'migrations'),
-  });
-  console.log('Migrations complete.');
+  try {
+    console.log('Running database migrations...');
 
-  await pool.end();
+    // Run each .sql file in order
+    const migrationsDir = path.join(__dirname, 'migrations');
+    const files = fs.readdirSync(migrationsDir)
+      .filter(f => f.endsWith('.sql'))
+      .sort();
+
+    for (const file of files) {
+      const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
+      console.log(`  Applying ${file}...`);
+      await pool.query(sql);
+    }
+
+    console.log('Migrations complete.');
+  } finally {
+    await pool.end();
+  }
 }
 
 // Allow running directly: tsx drizzle/migrate.ts
