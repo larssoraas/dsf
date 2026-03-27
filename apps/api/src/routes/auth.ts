@@ -35,6 +35,19 @@ function isValidEmail(email: string): boolean {
 export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post(
     '/register',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['email', 'password'],
+          properties: {
+            email: { type: 'string', format: 'email' },
+            password: { type: 'string', minLength: 8 },
+            displayName: { type: 'string' },
+          },
+        },
+      },
+    },
     async (
       request: FastifyRequest<{ Body: RegisterBody }>,
       reply: FastifyReply,
@@ -98,6 +111,18 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.post(
     '/login',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['email', 'password'],
+          properties: {
+            email: { type: 'string' },
+            password: { type: 'string' },
+          },
+        },
+      },
+    },
     async (
       request: FastifyRequest<{ Body: LoginBody }>,
       reply: FastifyReply,
@@ -140,7 +165,18 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.post<{ Body: LogoutBody }>(
     '/logout',
-    { preHandler: fastify.authenticate },
+    {
+      preHandler: fastify.authenticate,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['refreshToken'],
+          properties: {
+            refreshToken: { type: 'string' },
+          },
+        },
+      },
+    },
     async (request, reply) => {
       const { refreshToken } = request.body;
 
@@ -156,6 +192,17 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
   fastify.post(
     '/refresh',
+    {
+      schema: {
+        body: {
+          type: 'object',
+          required: ['refreshToken'],
+          properties: {
+            refreshToken: { type: 'string' },
+          },
+        },
+      },
+    },
     async (
       request: FastifyRequest<{ Body: RefreshBody }>,
       reply: FastifyReply,
@@ -171,7 +218,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         const payload = await verifyToken(refreshToken);
         sub = payload.sub;
       } catch (err) {
-        console.error('Refresh token verification failed:', err);
+        console.error('Refresh token verification failed:', err instanceof Error ? err.message : 'unknown error');
         return reply.code(401).send({ error: 'Invalid or expired refresh token' });
       }
 

@@ -14,7 +14,11 @@
       "Bash(ls ~/.nvm/versions/node/*/bin/node)",
       "Bash(command -v node)",
       "Bash(export PATH=\"/Users/larssoraas/.nvm/versions/node/v20.20.2/bin:$PATH\")",
-      "Bash(node /Users/larssoraas/Dev/2026/dsf/torget/node_modules/.bin/tsc --noEmit --project /Users/larssoraas/Dev/2026/dsf/packages/shared/tsconfig.json)"
+      "Bash(node /Users/larssoraas/Dev/2026/dsf/torget/node_modules/.bin/tsc --noEmit --project /Users/larssoraas/Dev/2026/dsf/packages/shared/tsconfig.json)",
+      "Bash(/usr/local/bin/npx tsc:*)",
+      "Bash(ls ~/.nvm/versions/node/*/bin/npx)",
+      "Bash(/Users/larssoraas/.nvm/versions/node/v20.20.2/bin/npx tsc:*)",
+      "Bash(/Users/larssoraas/.nvm/versions/node/v20.20.2/bin/node --version)"
     ]
   }
 }

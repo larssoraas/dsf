@@ -24,7 +24,16 @@ export async function profilesRoutes(fastify: FastifyInstance): Promise<void> {
       const { id } = request.params;
 
       const [profile] = await db
-        .select()
+        .select({
+          id: profiles.id,
+          displayName: profiles.displayName,
+          avatarUrl: profiles.avatarUrl,
+          bio: profiles.bio,
+          city: profiles.city,
+          avgRating: profiles.avgRating,
+          reviewCount: profiles.reviewCount,
+          createdAt: profiles.createdAt,
+        })
         .from(profiles)
         .where(eq(profiles.id, id))
         .limit(1);
@@ -70,7 +79,14 @@ export async function profilesRoutes(fastify: FastifyInstance): Promise<void> {
         .update(profiles)
         .set(updateData)
         .where(eq(profiles.id, userId))
-        .returning();
+        .returning({
+          id: profiles.id,
+          displayName: profiles.displayName,
+          avatarUrl: profiles.avatarUrl,
+          city: profiles.city,
+          avgRating: profiles.avgRating,
+          reviewCount: profiles.reviewCount,
+        });
 
       if (!updated) {
         return reply.code(404).send({ error: 'Profile not found' });

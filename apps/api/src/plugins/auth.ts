@@ -29,7 +29,7 @@ async function authPlugin(fastify: FastifyInstance): Promise<void> {
       const payload = await verifyToken(token);
       sub = payload.sub;
     } catch (err) {
-      console.error('JWT verification failed:', err);
+      console.error('JWT verification failed:', err instanceof Error ? err.message : 'unknown error');
       return reply.code(401).send({ error: 'Invalid or expired token' });
     }
 

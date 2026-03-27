@@ -80,8 +80,8 @@ export async function listingsRoutes(fastify: FastifyInstance): Promise<void> {
           ORDER BY earth_distance(
             ll_to_earth(${lat}, ${lng}),
             ll_to_earth(
-              CAST(SPLIT_PART(l.location::text, ',', 2) AS float),
-              CAST(TRIM(LEADING '(' FROM SPLIT_PART(l.location::text, ',', 1)) AS float)
+              (l.location[1])::float,
+              (l.location[0])::float
             )
           ) ASC NULLS LAST,
           l.created_at DESC
@@ -280,7 +280,26 @@ export async function listingsRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /listings — create listing (requires auth)
   fastify.post<{ Body: CreateListingInput }>(
     '/',
-    { preHandler: fastify.authenticate },
+    {
+      preHandler: fastify.authenticate,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['title', 'category', 'condition', 'listingType'],
+          properties: {
+            title: { type: 'string', minLength: 1, maxLength: 200 },
+            description: { type: 'string' },
+            price: { type: 'number' },
+            category: { type: 'string', enum: ['electronics', 'clothing', 'furniture', 'sports', 'books', 'other'] },
+            condition: { type: 'string', enum: ['new', 'like_new', 'good', 'used', 'for_parts'] },
+            listingType: { type: 'string', enum: ['sale', 'wanted', 'free'] },
+            city: { type: 'string' },
+            location: { type: 'string' },
+            imageUrls: { type: 'array', items: { type: 'string' } },
+          },
+        },
+      },
+    },
     async (request, reply) => {
       const {
         title,

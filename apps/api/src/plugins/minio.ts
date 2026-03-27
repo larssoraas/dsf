@@ -16,7 +16,6 @@ declare module 'fastify' {
     s3: S3Client;
     uploadImage(
       buffer: Buffer,
-      filename: string,
       mimetype: string,
     ): Promise<string>;
   }
@@ -48,7 +47,6 @@ async function minioPlugin(fastify: FastifyInstance): Promise<void> {
     'uploadImage',
     async (
       buffer: Buffer,
-      filename: string,
       mimetype: string,
     ): Promise<string> => {
       if (!ALLOWED_MIMETYPES.has(mimetype)) {
@@ -65,7 +63,7 @@ async function minioPlugin(fastify: FastifyInstance): Promise<void> {
       }
 
       const extension = mimetype.split('/')[1] ?? 'jpg';
-      const key = `${randomUUID()}-${filename}.${extension}`;
+      const key = `${randomUUID()}.${extension}`;
 
       await s3.send(
         new PutObjectCommand({

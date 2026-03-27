@@ -39,7 +39,7 @@ async function start(): Promise<void> {
   const app = Fastify({ logger: true });
 
   // Plugins
-  await app.register(cors, { origin: '*' }); // Temporary for dev — restrict in production
+  await app.register(cors, { origin: process.env.CORS_ORIGIN ?? '*' });
   await app.register(multipart);
   await app.register(redisPlugin);
   await app.register(minioPlugin);

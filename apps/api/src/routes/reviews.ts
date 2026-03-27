@@ -43,7 +43,21 @@ export async function reviewsRoutes(fastify: FastifyInstance): Promise<void> {
   // POST /reviews — create a review (requires auth)
   fastify.post<{ Body: CreateReviewInput }>(
     '/',
-    { preHandler: fastify.authenticate },
+    {
+      preHandler: fastify.authenticate,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['reviewedId', 'listingId', 'rating'],
+          properties: {
+            reviewedId: { type: 'string', format: 'uuid' },
+            listingId: { type: 'string', format: 'uuid' },
+            rating: { type: 'integer', minimum: 1, maximum: 5 },
+            comment: { type: 'string' },
+          },
+        },
+      },
+    },
     async (request, reply) => {
       const { reviewedId, listingId, rating, comment } = request.body;
       const reviewerId = request.user.id;
@@ -58,34 +72,37 @@ export async function reviewsRoutes(fastify: FastifyInstance): Promise<void> {
           .send({ error: 'Rating must be an integer between 1 and 5' });
       }
 
-      const [newReview] = await db
-        .insert(reviews)
-        .values({
-          reviewerId, // Set from request.user.id — never from body
-          reviewedId,
-          listingId,
-          rating,
-          comment: comment ?? null,
-        })
-        .returning();
+      const newReview = await db.transaction(async (tx) => {
+        const [inserted] = await tx
+          .insert(reviews)
+          .values({
+            reviewerId, // Set from request.user.id — never from body
+            reviewedId,
+            listingId,
+            rating,
+            comment: comment ?? null,
+          })
+          .returning();
 
-      if (!newReview) {
-        console.error('Failed to create review: no row returned');
-        return reply.code(500).send({ error: 'Failed to create review' });
-      }
+        if (!inserted) {
+          throw new Error('Failed to create review: no row returned');
+        }
 
-      // Update reviewer profile: recalculate avg_rating, increment review_count
-      await db
-        .update(profiles)
-        .set({
-          avgRating: sql`(
-            SELECT CAST(AVG(rating) AS NUMERIC(2,1))
-            FROM reviews
-            WHERE reviewed_id = ${reviewedId}
-          )`,
-          reviewCount: sql`${profiles.reviewCount} + 1`,
-        })
-        .where(eq(profiles.id, reviewedId));
+        // Update reviewed profile: recalculate avg_rating, increment review_count
+        await tx
+          .update(profiles)
+          .set({
+            avgRating: sql`(
+              SELECT CAST(AVG(rating) AS NUMERIC(2,1))
+              FROM reviews
+              WHERE reviewed_id = ${reviewedId}
+            )`,
+            reviewCount: sql`${profiles.reviewCount} + 1`,
+          })
+          .where(eq(profiles.id, reviewedId));
+
+        return inserted;
+      });
 
       return reply.code(201).send({ data: newReview });
     },

@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
 import Redis from 'ioredis';
+import { createHash } from 'crypto';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -9,6 +10,10 @@ declare module 'fastify' {
       blacklist(token: string, ttlSeconds: number): Promise<void>;
     };
   }
+}
+
+function tokenKey(token: string): string {
+  return `blacklist:${createHash('sha256').update(token).digest('hex')}`;
 }
 
 async function redisPlugin(fastify: FastifyInstance): Promise<void> {
@@ -29,7 +34,7 @@ async function redisPlugin(fastify: FastifyInstance): Promise<void> {
   };
 
   extendedClient.isBlacklisted = async (token: string): Promise<boolean> => {
-    const result = await client.get(`blacklist:${token}`);
+    const result = await client.get(tokenKey(token));
     return result !== null;
   };
 
@@ -37,7 +42,7 @@ async function redisPlugin(fastify: FastifyInstance): Promise<void> {
     token: string,
     ttlSeconds: number,
   ): Promise<void> => {
-    await client.set(`blacklist:${token}`, '1', 'EX', ttlSeconds);
+    await client.set(tokenKey(token), '1', 'EX', ttlSeconds);
   };
 
   fastify.decorate('redis', extendedClient);
