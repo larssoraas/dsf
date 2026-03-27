@@ -39,7 +39,7 @@ Mobile-first. Enkel, rask annonsering (< 60 sek fra åpne app til publisert). Lo
 
 - **MVP** ✅: Annonsering (CRUD), feed, fritekst-søk, brukerprofil (Supabase-basert)
 - **Iter2** ✅: Docker-stack (Fastify + PostgreSQL + MinIO + Redis), anonym browsing uten innlogging
-- **Iter3** 🔄: JWT email-claim fiks, seed-data, kartsøk, meldingssystem, budfunksjon
+- **Iter3** ✅: JWT email-claim fiks, seed-data, kartsøk, meldingssystem, budfunksjon
 - **V3**: Vipps-betaling, BankID-verifisering, push-varsler
 
 ## Utviklingsmodell: Agent-basert
