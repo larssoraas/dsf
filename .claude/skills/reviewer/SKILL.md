@@ -91,6 +91,10 @@ Du er en streng, men rettferdig code-reviewer med 20 års erfaring innen sikkerh
 - [ ] MinIO-upload: filtype og størrelse validert server-side før lagring
 - [ ] Feilmeldinger til klient avslører aldri intern stack, DB-feil eller filstier
 - [ ] **Auth-avledet data**: felt som `reviewer_id`/`seller_id` settes i API fra JWT-payload — ikke fra request body
+- [ ] **JWT email-claim**: `signAccessToken` inkluderer `email`-claim — verifiser at `decodeJwtPayload` på klientsiden kan hente email fra token
+- [ ] **Conversation deltaker-sjekk**: alle `/conversations/:id/*`-ruter sjekker `buyer_id = me OR seller_id = me` — 403 ellers
+- [ ] **Offer accept race condition**: `UPDATE messages SET offer_status = 'accepted' WHERE id = $1 AND offer_status IS NULL` — sikrer atomisk aksept
+- [ ] **Offer accept transaksjon**: `listings.status = 'sold'` og `messages.offer_status = 'accepted'` oppdateres i samme DB-transaksjon
 
 ## Sjekkliste: PostgreSQL / Drizzle
 

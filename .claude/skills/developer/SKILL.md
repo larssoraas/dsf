@@ -69,6 +69,9 @@ For HVER fil du leverer, verifiser:
 - [ ] **Postgres `point`-type**: bruk `(lng,lat)` tuple-format — IKKE WKT `POINT(lng lat)` (ugyldig for Postgres point)
 - [ ] **Auth-avledet data**: felt som `reviewer_id`, `owner_id`, `user_id` skal IKKE sendes fra klient — sett `DEFAULT auth.uid()` i DB og utelat fra insert-payload
 - [ ] **Nye Expo native-pakker**: legg alltid til i `package.json` dependencies umiddelbart ved import — ikke anta at expo install er nok
+- [ ] **react-native-maps**: krever native rebuild — installer med `expo install react-native-maps`, start Expo med `--clear`. Web: vis fallback-tekst, ikke krasj.
+- [ ] **Lokasjon-parsing fra DB**: `listings.location` returneres som `"(lng,lat)"` string fra Postgres — parse med split, ikke anta objektformat
+- [ ] **JWT email-claim**: `signAccessToken(userId, email)` — access-token MÅ inkludere `email`-claim. Ved token-refresh: hent bruker fra DB for å populere email.
 
 ## Sjekkliste: Docker / Dockerfile
 
