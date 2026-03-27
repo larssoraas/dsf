@@ -1,31 +1,70 @@
-import { Alert } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
-import { supabase } from './supabase';
+import { api } from './api';
 
-const BUCKET = 'listing-images';
 const MAX_WIDTH = 1200;
 const COMPRESS = 0.7;
 
-export async function uploadListingImage(uri: string, path: string): Promise<string> {
-  const manipulated = await ImageManipulator.manipulateAsync(
-    uri,
-    [{ resize: { width: MAX_WIDTH } }],
-    { compress: COMPRESS, format: ImageManipulator.SaveFormat.JPEG },
-  );
+export async function uploadListingImage(uri: string): Promise<string> {
+  try {
+    const manipulated = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: MAX_WIDTH } }],
+      { compress: COMPRESS, format: ImageManipulator.SaveFormat.JPEG },
+    );
 
-  const response = await fetch(manipulated.uri);
-  const arrayBuffer = await response.arrayBuffer();
+    // Read compressed file as ArrayBuffer — Hermes does not support FileReader
+    const fileResponse = await fetch(manipulated.uri);
+    const arrayBuffer = await fileResponse.arrayBuffer();
+    const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
 
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: false });
+    const formData = new FormData();
+    formData.append('image', blob, 'image.jpg');
 
-  if (error) {
-    console.error('storage upload error:', error);
-    Alert.alert('Feil', 'Kunne ikke laste opp bildet. Prøv igjen.');
-    throw new Error('Kunne ikke laste opp bildet. Prøv igjen.');
+    // Use native fetch directly since api.post sets Content-Type to application/json
+    const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+    const { getItem } = await import('expo-secure-store');
+    const { Platform } = await import('react-native');
+
+    const accessToken =
+      Platform.OS === 'web'
+        ? sessionStorage.getItem('torget_access_token')
+        : await getItem('torget_access_token');
+
+    const headers: Record<string, string> = {};
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    const response = await fetch(`${BASE_URL}/uploads/image`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      console.error('[storage] upload failed:', response.status);
+      throw new Error('Noe gikk galt. Prøv igjen.');
+    }
+
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('Noe gikk galt. Prøv igjen.');
+    }
+
+    const url = (body as { data?: { url?: string } })?.data?.url;
+    if (typeof url !== 'string') {
+      console.error('[storage] unexpected response shape:', body);
+      throw new Error('Noe gikk galt. Prøv igjen.');
+    }
+
+    return url;
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('Noe gikk galt')) {
+      throw err;
+    }
+    console.error('[storage] uploadListingImage error:', err);
+    throw new Error('Noe gikk galt. Prøv igjen.');
   }
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
 }

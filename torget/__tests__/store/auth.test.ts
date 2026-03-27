@@ -1,167 +1,143 @@
 /**
  * Unit tests for store/auth.ts
  *
- * We mock lib/supabase to avoid real network calls.
+ * We mock lib/api and expo-secure-store to avoid real network/storage calls.
  */
-
-import type { Session, User, AuthError } from '@supabase/supabase-js';
-
-// ---- Helpers ----------------------------------------------------------------
-
-const makeUser = (overrides: Partial<User> = {}): User =>
-  ({
-    id: 'user-123',
-    email: 'test@example.com',
-    aud: 'authenticated',
-    role: 'authenticated',
-    created_at: new Date().toISOString(),
-    app_metadata: {},
-    user_metadata: { display_name: 'Test User' },
-    ...overrides,
-  }) as User;
-
-const makeSession = (user: User = makeUser()): Session =>
-  ({
-    access_token: 'access-token',
-    refresh_token: 'refresh-token',
-    expires_in: 3600,
-    token_type: 'bearer',
-    user,
-  }) as Session;
-
-const makeAuthError = (message: string, status: number): AuthError =>
-  Object.assign(new Error(message), { status, name: 'AuthError' }) as AuthError;
 
 // ---- Mock setup -------------------------------------------------------------
 
-const mockSignInWithPassword = jest.fn();
-const mockSignUp = jest.fn();
-const mockSignOut = jest.fn();
-const mockGetSession = jest.fn();
-const mockOnAuthStateChange = jest.fn();
+const mockApiPost = jest.fn();
+const mockSetTokens = jest.fn();
+const mockClearTokens = jest.fn();
 
-jest.mock('../../lib/supabase', () => ({
-  supabase: {
-    auth: {
-      signInWithPassword: (...args: unknown[]) => mockSignInWithPassword(...args),
-      signUp: (...args: unknown[]) => mockSignUp(...args),
-      signOut: (...args: unknown[]) => mockSignOut(...args),
-      getSession: (...args: unknown[]) => mockGetSession(...args),
-      onAuthStateChange: (...args: unknown[]) => mockOnAuthStateChange(...args),
-    },
+jest.mock('../../lib/api', () => ({
+  api: {
+    post: (...args: unknown[]) => mockApiPost(...args),
   },
+  setTokens: (...args: unknown[]) => mockSetTokens(...args),
+  clearTokens: (...args: unknown[]) => mockClearTokens(...args),
 }));
 
-// Import AFTER mock is set up
+const mockSecureStoreGetItem = jest.fn();
+
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: (...args: unknown[]) => mockSecureStoreGetItem(...args),
+  setItemAsync: jest.fn(),
+  deleteItemAsync: jest.fn(),
+}));
+
+jest.mock('react-native', () => ({
+  Platform: { OS: 'ios' },
+}));
+
+// Import AFTER mocks are set up
 import { useAuthStore } from '../../store/auth';
+
+// ---- Helpers ----------------------------------------------------------------
+
+// Build a minimal JWT with the given sub and email.
+// Format: base64(header).base64(payload).base64(signature)
+function makeJwt(sub: string, email: string): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const payload = btoa(JSON.stringify({ sub, email, exp: 9999999999 }));
+  const sig = btoa('signature');
+  return `${header}.${payload}.${sig}`;
+}
 
 // ---- Reset between tests ----------------------------------------------------
 
 beforeEach(() => {
   jest.clearAllMocks();
-  // Reset the store state between tests
   useAuthStore.setState({
     session: null,
-    user: null,
-    loading: false,
+    isLoading: false,
     error: null,
   });
-  // Default: onAuthStateChange does nothing
-  mockOnAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: jest.fn() } } });
+  mockSetTokens.mockResolvedValue(undefined);
+  mockClearTokens.mockResolvedValue(undefined);
 });
 
 // ---- Tests ------------------------------------------------------------------
 
 describe('useAuthStore — signIn', () => {
-  it('sets session and user on successful sign-in', async () => {
-    const user = makeUser();
-    const session = makeSession(user);
-    mockSignInWithPassword.mockResolvedValue({ data: { session, user }, error: null });
+  it('sets session on successful sign-in', async () => {
+    const jwt = makeJwt('user-123', 'test@example.com');
+    mockApiPost.mockResolvedValue({ accessToken: jwt, refreshToken: 'refresh-token' });
 
     await useAuthStore.getState().signIn('test@example.com', 'password123');
 
+    expect(mockApiPost).toHaveBeenCalledWith('/auth/login', {
+      email: 'test@example.com',
+      password: 'password123',
+    });
+    expect(mockSetTokens).toHaveBeenCalledWith(jwt, 'refresh-token');
+
     const state = useAuthStore.getState();
-    expect(state.session).toBe(session);
-    expect(state.user).toBe(user);
-    expect(state.loading).toBe(false);
+    expect(state.session?.user.id).toBe('user-123');
+    expect(state.session?.user.email).toBe('test@example.com');
+    expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
   });
 
   it('sets error message on failed sign-in', async () => {
-    const authError = makeAuthError('Invalid login credentials', 400);
-    mockSignInWithPassword.mockResolvedValue({ data: { session: null, user: null }, error: authError });
+    mockApiPost.mockRejectedValue(new Error('Noe gikk galt. Prøv igjen.'));
 
     await useAuthStore.getState().signIn('test@example.com', 'wrong-password');
 
     const state = useAuthStore.getState();
     expect(state.session).toBeNull();
-    expect(state.user).toBeNull();
-    expect(state.loading).toBe(false);
-    expect(state.error).toBe('Ugyldig e-post eller passord.');
+    expect(state.isLoading).toBe(false);
+    expect(state.error).toBe('Noe gikk galt. Prøv igjen.');
   });
 
   it('sets loading to true while signing in, then false after', async () => {
-    const loadingStates: boolean[] = [];
     let resolveSignIn!: (value: unknown) => void;
     const pendingPromise = new Promise((resolve) => {
       resolveSignIn = resolve;
     });
 
-    mockSignInWithPassword.mockReturnValue(pendingPromise);
+    mockApiPost.mockReturnValue(pendingPromise);
 
     const signInPromise = useAuthStore.getState().signIn('test@example.com', 'password123');
-    // After calling signIn, loading should be true
-    expect(useAuthStore.getState().loading).toBe(true);
+    expect(useAuthStore.getState().isLoading).toBe(true);
 
-    // Resolve the promise
-    resolveSignIn({ data: { session: null, user: null }, error: makeAuthError('fail', 400) });
+    resolveSignIn({ accessToken: makeJwt('u', 'e@e.com'), refreshToken: 'r' });
     await signInPromise;
 
-    expect(useAuthStore.getState().loading).toBe(false);
+    expect(useAuthStore.getState().isLoading).toBe(false);
   });
 
-  it('sets generic error for non-400/422 auth errors', async () => {
-    const authError = makeAuthError('Too many requests', 429);
-    mockSignInWithPassword.mockResolvedValue({ data: { session: null, user: null }, error: authError });
+  it('maps "already registered" API error to Norwegian message', async () => {
+    mockApiPost.mockRejectedValue(new Error('already registered'));
 
-    await useAuthStore.getState().signIn('test@example.com', 'password');
+    await useAuthStore.getState().signIn('existing@example.com', 'password');
 
-    expect(useAuthStore.getState().error).toBe('Noe gikk galt. Prøv igjen.');
+    expect(useAuthStore.getState().error).toBe('E-posten er allerede registrert.');
   });
 });
 
 describe('useAuthStore — signUp', () => {
-  it('sets session and user on successful registration', async () => {
-    const user = makeUser();
-    const session = makeSession(user);
-    mockSignUp.mockResolvedValue({ data: { session, user }, error: null });
-
-    await useAuthStore.getState().signUp('new@example.com', 'password123', 'New User');
-
-    const state = useAuthStore.getState();
-    expect(state.session).toBe(session);
-    expect(state.user).toBe(user);
-    expect(state.loading).toBe(false);
-    expect(state.error).toBeNull();
-  });
-
-  it('passes display_name in metadata when signing up', async () => {
-    const user = makeUser();
-    const session = makeSession(user);
-    mockSignUp.mockResolvedValue({ data: { session, user }, error: null });
+  it('sets session on successful registration', async () => {
+    const jwt = makeJwt('user-456', 'new@example.com');
+    mockApiPost.mockResolvedValue({ accessToken: jwt, refreshToken: 'refresh-token' });
 
     await useAuthStore.getState().signUp('new@example.com', 'password123', 'Ola Nordmann');
 
-    expect(mockSignUp).toHaveBeenCalledWith({
+    expect(mockApiPost).toHaveBeenCalledWith('/auth/register', {
       email: 'new@example.com',
       password: 'password123',
-      options: { data: { display_name: 'Ola Nordmann' } },
+      displayName: 'Ola Nordmann',
     });
+
+    const state = useAuthStore.getState();
+    expect(state.session?.user.id).toBe('user-456');
+    expect(state.session?.user.email).toBe('new@example.com');
+    expect(state.isLoading).toBe(false);
+    expect(state.error).toBeNull();
   });
 
-  it('sets 422 error message for duplicate email', async () => {
-    const authError = makeAuthError('User already registered', 422);
-    mockSignUp.mockResolvedValue({ data: { session: null, user: null }, error: authError });
+  it('sets error for duplicate email', async () => {
+    mockApiPost.mockRejectedValue(new Error('already registered'));
 
     await useAuthStore.getState().signUp('existing@example.com', 'password123', 'Test');
 
@@ -170,71 +146,74 @@ describe('useAuthStore — signUp', () => {
 });
 
 describe('useAuthStore — signOut', () => {
-  it('clears session and user on sign-out', async () => {
-    // Start with a session
-    const user = makeUser();
-    useAuthStore.setState({ session: makeSession(user), user });
-
-    mockSignOut.mockResolvedValue({ error: null });
+  it('clears session and tokens on sign-out', async () => {
+    const jwt = makeJwt('user-123', 'test@example.com');
+    useAuthStore.setState({ session: { user: { id: 'user-123', email: 'test@example.com' } } });
+    mockApiPost.mockResolvedValue(undefined);
 
     await useAuthStore.getState().signOut();
 
+    expect(mockClearTokens).toHaveBeenCalledTimes(1);
     const state = useAuthStore.getState();
     expect(state.session).toBeNull();
-    expect(state.user).toBeNull();
-    expect(state.loading).toBe(false);
+    expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
   });
 
-  it('clears session and sets error message if supabase signOut returns an error', async () => {
-    const user = makeUser();
-    useAuthStore.setState({ session: makeSession(user), user });
-
-    mockSignOut.mockResolvedValue({ error: makeAuthError('Network error', 500) });
+  it('still clears local session even if server logout fails', async () => {
+    useAuthStore.setState({ session: { user: { id: 'user-123', email: 'test@example.com' } } });
+    mockApiPost.mockRejectedValue(new Error('Network error'));
 
     await useAuthStore.getState().signOut();
 
-    // signOut always clears the local state regardless of server response
-    const state = useAuthStore.getState();
-    expect(state.session).toBeNull();
-    expect(state.user).toBeNull();
-    expect(state.loading).toBe(false);
-    // Error message is shown to the user (generic Norwegian message for unknown errors)
-    expect(state.error).toBe('Noe gikk galt. Prøv igjen.');
+    expect(mockClearTokens).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().isLoading).toBe(false);
   });
 });
 
 describe('useAuthStore — initialize', () => {
-  it('restores existing session from storage', async () => {
-    const user = makeUser();
-    const session = makeSession(user);
-    mockGetSession.mockResolvedValue({ data: { session }, error: null });
+  it('restores session from stored access token', async () => {
+    const jwt = makeJwt('user-789', 'stored@example.com');
+    mockSecureStoreGetItem.mockResolvedValue(jwt);
 
     await useAuthStore.getState().initialize();
 
     const state = useAuthStore.getState();
-    expect(state.session).toBe(session);
-    expect(state.user).toBe(user);
-    expect(state.loading).toBe(false);
+    expect(state.session?.user.id).toBe('user-789');
+    expect(state.session?.user.email).toBe('stored@example.com');
+    expect(state.isLoading).toBe(false);
   });
 
-  it('sets session to null when no stored session exists', async () => {
-    mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
+  it('sets session to null when no stored token exists', async () => {
+    mockSecureStoreGetItem.mockResolvedValue(null);
 
     await useAuthStore.getState().initialize();
 
     const state = useAuthStore.getState();
     expect(state.session).toBeNull();
-    expect(state.user).toBeNull();
-    expect(state.loading).toBe(false);
+    expect(state.isLoading).toBe(false);
   });
 
-  it('registers onAuthStateChange listener', async () => {
-    mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
+  it('sets session to null when stored token has invalid JWT format', async () => {
+    mockSecureStoreGetItem.mockResolvedValue('not-a-jwt');
 
     await useAuthStore.getState().initialize();
 
-    expect(mockOnAuthStateChange).toHaveBeenCalledTimes(1);
+    const state = useAuthStore.getState();
+    expect(state.session).toBeNull();
+    expect(state.isLoading).toBe(false);
+  });
+
+  it('decodes JWT payload and sets user.id and user.email', async () => {
+    const jwt = makeJwt('decoded-user', 'decoded@example.com');
+    mockSecureStoreGetItem.mockResolvedValue(jwt);
+
+    await useAuthStore.getState().initialize();
+
+    const state = useAuthStore.getState();
+    expect(state.session?.user.id).toBe('decoded-user');
+    expect(state.session?.user.email).toBe('decoded@example.com');
   });
 });
 

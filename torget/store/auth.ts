@@ -1,11 +1,17 @@
 import { create } from 'zustand';
-import type { Session, User, AuthError } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { api, setTokens, clearTokens } from '../lib/api';
+import type { AuthTokens } from '../lib/types';
+
+interface SessionUser {
+  id: string;
+  email: string;
+}
 
 interface AuthState {
-  session: Session | null;
-  user: User | null;
-  loading: boolean;
+  session: { user: SessionUser } | null;
+  isLoading: boolean;
   error: string | null;
 }
 
@@ -13,79 +19,136 @@ interface AuthActions {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
-  initialize: () => Promise<() => void>;
+  initialize: () => Promise<void>;
   clearError: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
 
-const mapAuthError = (error: AuthError): string => {
-  switch (error.status) {
-    case 400:
-      return 'Ugyldig e-post eller passord.';
-    case 422:
-      return 'E-posten er allerede registrert.';
-    default:
-      return 'Noe gikk galt. Prøv igjen.';
+const KEY_ACCESS = 'torget_access_token';
+
+async function readAccessToken(): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    return Promise.resolve(sessionStorage.getItem(KEY_ACCESS));
   }
-};
+  return SecureStore.getItemAsync(KEY_ACCESS);
+}
+
+// Decode JWT payload (base64) to get user.id and email.
+// Client-side only — no signature verification.
+function decodeJwtPayload(token: string): { sub: string; email: string } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    if (typeof payload?.sub !== 'string' || typeof payload?.email !== 'string') {
+      return null;
+    }
+    return { sub: payload.sub as string, email: payload.email as string };
+  } catch {
+    return null;
+  }
+}
+
+function mapAuthError(err: unknown): string {
+  const message = err instanceof Error ? err.message : '';
+  if (message.includes('allerede registrert') || message.includes('already registered')) {
+    return 'E-posten er allerede registrert.';
+  }
+  if (
+    message.includes('Ugyldig') ||
+    message.includes('Invalid') ||
+    message.includes('feil passord')
+  ) {
+    return 'Ugyldig e-post eller passord.';
+  }
+  return 'Noe gikk galt. Prøv igjen.';
+}
 
 export const useAuthStore = create<AuthStore>((set) => ({
   session: null,
-  user: null,
-  loading: false,
+  isLoading: false,
   error: null,
 
   signIn: async (email: string, password: string) => {
-    set({ loading: true, error: null });
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      set({ loading: false, error: mapAuthError(error) });
-      return;
+    set({ isLoading: true, error: null });
+    try {
+      const tokens = await api.post<AuthTokens>('/auth/login', { email, password });
+      await setTokens(tokens.accessToken, tokens.refreshToken);
+      const payload = decodeJwtPayload(tokens.accessToken);
+      if (!payload) {
+        set({ isLoading: false, error: 'Noe gikk galt. Prøv igjen.' });
+        return;
+      }
+      set({
+        session: { user: { id: payload.sub, email: payload.email } },
+        isLoading: false,
+        error: null,
+      });
+    } catch (err) {
+      console.error('[auth] signIn error:', err);
+      set({ isLoading: false, error: mapAuthError(err) });
     }
-    set({ session: data.session, user: data.user, loading: false, error: null });
   },
 
   signUp: async (email: string, password: string, displayName: string) => {
-    set({ loading: true, error: null });
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { display_name: displayName },
-      },
-    });
-    if (error) {
-      set({ loading: false, error: mapAuthError(error) });
-      return;
+    set({ isLoading: true, error: null });
+    try {
+      const tokens = await api.post<AuthTokens>('/auth/register', {
+        email,
+        password,
+        displayName,
+      });
+      await setTokens(tokens.accessToken, tokens.refreshToken);
+      const payload = decodeJwtPayload(tokens.accessToken);
+      if (!payload) {
+        set({ isLoading: false, error: 'Noe gikk galt. Prøv igjen.' });
+        return;
+      }
+      set({
+        session: { user: { id: payload.sub, email: payload.email } },
+        isLoading: false,
+        error: null,
+      });
+    } catch (err) {
+      console.error('[auth] signUp error:', err);
+      set({ isLoading: false, error: mapAuthError(err) });
     }
-    set({ session: data.session, user: data.user, loading: false, error: null });
   },
 
   signOut: async () => {
-    set({ loading: true, error: null });
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      set({ session: null, user: null, loading: false, error: mapAuthError(error) });
-      return;
+    set({ isLoading: true, error: null });
+    try {
+      // Best-effort server logout — clear local tokens regardless of outcome
+      await api.post('/auth/logout', {});
+    } catch (err) {
+      console.error('[auth] signOut error:', err);
+    } finally {
+      await clearTokens();
+      set({ session: null, isLoading: false, error: null });
     }
-    set({ session: null, user: null, loading: false, error: null });
   },
 
   initialize: async () => {
-    set({ loading: true });
-    const { data } = await supabase.auth.getSession();
-    set({
-      session: data.session,
-      user: data.session?.user ?? null,
-      loading: false,
-    });
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, user: session?.user ?? null });
-    });
-    return () => subscription.unsubscribe();
+    set({ isLoading: true });
+    try {
+      const accessToken = await readAccessToken();
+      if (!accessToken) {
+        set({ session: null, isLoading: false });
+        return;
+      }
+      const payload = decodeJwtPayload(accessToken);
+      if (!payload) {
+        set({ session: null, isLoading: false });
+        return;
+      }
+      set({
+        session: { user: { id: payload.sub, email: payload.email } },
+        isLoading: false,
+      });
+    } catch {
+      set({ session: null, isLoading: false });
+    }
   },
 
   clearError: () => set({ error: null }),

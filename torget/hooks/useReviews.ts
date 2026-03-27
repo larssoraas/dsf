@@ -1,19 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { useAuthStore } from '../store/auth';
-import type { Review } from '../lib/types';
+import type { Review, Profile } from '../lib/types';
 
 export interface ReviewWithReviewer extends Review {
-  reviewer: {
-    id: string;
-    display_name: string;
-    avatar_url: string | null;
-  };
+  reviewer: Pick<Profile, 'id' | 'displayName' | 'avatarUrl'>;
 }
 
 export interface CreateReviewInput {
-  reviewed_id: string;
-  listing_id: string;
+  reviewedId: string;
+  listingId: string;
   rating: number;
   comment?: string;
 }
@@ -21,33 +17,12 @@ export interface CreateReviewInput {
 // ---- Query functions -------------------------------------------------------
 
 async function fetchReviews(userId: string): Promise<ReviewWithReviewer[]> {
-  const { data, error } = await supabase
-    .from('reviews')
-    .select(
-      `
-      id,
-      reviewer_id,
-      reviewed_id,
-      listing_id,
-      rating,
-      comment,
-      created_at,
-      reviewer:profiles!reviews_reviewer_id_fkey (
-        id,
-        display_name,
-        avatar_url
-      )
-    `,
-    )
-    .eq('reviewed_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('[useReviews] fetchReviews:', error.message);
+  try {
+    return await api.get<ReviewWithReviewer[]>(`/profiles/${userId}/reviews`);
+  } catch (err) {
+    console.error('[useReviews] fetchReviews:', err);
     throw new Error('Noe gikk galt. Prøv igjen.');
   }
-
-  return (data ?? []) as unknown as ReviewWithReviewer[];
 }
 
 // ---- Hooks -----------------------------------------------------------------
@@ -70,25 +45,26 @@ export function useCreateReview() {
       if (!reviewerId) throw new Error('Ikke innlogget');
 
       // Client-side self-review guard
-      if (reviewerId === input.reviewed_id) {
+      if (reviewerId === input.reviewedId) {
         throw new Error('Du kan ikke anmelde deg selv.');
       }
 
-      const { error } = await supabase.from('reviews').insert({
-        reviewed_id: input.reviewed_id,
-        listing_id: input.listing_id,
-        rating: input.rating,
-        comment: input.comment ?? null,
-      });
-
-      if (error) {
-        console.error('[useReviews] createReview:', error.message);
+      try {
+        // reviewer_id is set server-side from the JWT — do not send from client
+        await api.post('/reviews', {
+          reviewedId: input.reviewedId,
+          listingId: input.listingId,
+          rating: input.rating,
+          comment: input.comment ?? null,
+        });
+      } catch (err) {
+        console.error('[useReviews] createReview:', err);
         throw new Error('Noe gikk galt. Prøv igjen.');
       }
     },
     onSuccess: (_data, input) => {
-      queryClient.invalidateQueries({ queryKey: ['reviews', input.reviewed_id] });
-      queryClient.invalidateQueries({ queryKey: ['profile', 'public', input.reviewed_id] });
+      queryClient.invalidateQueries({ queryKey: ['reviews', input.reviewedId] });
+      queryClient.invalidateQueries({ queryKey: ['profile', 'public', input.reviewedId] });
     },
   });
 }

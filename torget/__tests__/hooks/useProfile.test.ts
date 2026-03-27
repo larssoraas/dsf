@@ -2,18 +2,18 @@
  * Unit tests for hooks/useProfile.ts
  *
  * Focuses on:
- * - useMarkAsSold: calls supabase update with status='sold'
+ * - useMarkAsSold: calls api.patch('/listings/:id/sold')
  */
 
 // ---- Mock setup -------------------------------------------------------------
 
-const mockUpdate = jest.fn();
-const mockEq = jest.fn();
-const mockFrom = jest.fn();
+const mockApiPatch = jest.fn();
+const mockApiGet = jest.fn();
 
-jest.mock('../../lib/supabase', () => ({
-  supabase: {
-    from: jest.fn(),
+jest.mock('../../lib/api', () => ({
+  api: {
+    patch: (...args: unknown[]) => mockApiPatch(...args),
+    get: (...args: unknown[]) => mockApiGet(...args),
   },
 }));
 
@@ -47,39 +47,18 @@ import { useMarkAsSold } from '../../hooks/useProfile';
 describe('useMarkAsSold', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockApiPatch.mockResolvedValue(undefined);
+    jest.requireMock('../../store/auth').useAuthStore.mockReturnValue({
+      session: { user: { id: 'user-123' } },
+    });
   });
 
-  it('calls supabase update with status="sold"', async () => {
-    // Set up the chain to capture calls
-    const eqCalls: unknown[][] = [];
-    const updateCalls: unknown[][] = [];
-
-    jest.requireMock('../../lib/supabase').supabase.from = (table: string) => {
-      mockFrom(table);
-      const chain = {
-        update: (...args: unknown[]) => {
-          updateCalls.push(args);
-          return chain;
-        },
-        eq: (...args: unknown[]) => {
-          eqCalls.push(args);
-          return chain;
-        },
-        then: (resolve: (v: unknown) => void) =>
-          Promise.resolve({ data: null, error: null }).then(resolve),
-      };
-      return chain;
-    };
-
+  it('calls api.patch("/listings/listing-abc/sold")', async () => {
     const hook = useMarkAsSold('listing-abc');
 
-    // Call mutateAsync directly to test the mutation function
     await hook.mutateAsync(undefined);
 
-    expect(mockFrom).toHaveBeenCalledWith('listings');
-    expect(updateCalls[0]).toEqual([{ status: 'sold' }]);
-    expect(eqCalls).toContainEqual(['id', 'listing-abc']);
-    expect(eqCalls).toContainEqual(['seller_id', 'user-123']);
+    expect(mockApiPatch).toHaveBeenCalledWith('/listings/listing-abc/sold');
   });
 
   it('throws if not logged in', async () => {
@@ -90,18 +69,11 @@ describe('useMarkAsSold', () => {
     const hook = useMarkAsSold('listing-abc');
 
     await expect(hook.mutateAsync(undefined)).rejects.toThrow('Ikke innlogget');
+    expect(mockApiPatch).not.toHaveBeenCalled();
   });
 
-  it('throws generic error when supabase returns an error', async () => {
-    jest.requireMock('../../lib/supabase').supabase.from = (_table: string) => {
-      const chain = {
-        update: () => chain,
-        eq: () => chain,
-        then: (resolve: (v: unknown) => void) =>
-          Promise.resolve({ data: null, error: { message: 'DB error' } }).then(resolve),
-      };
-      return chain;
-    };
+  it('throws generic error when api.patch fails', async () => {
+    mockApiPatch.mockRejectedValue(new Error('Noe gikk galt. Prøv igjen.'));
 
     const hook = useMarkAsSold('listing-xyz');
 

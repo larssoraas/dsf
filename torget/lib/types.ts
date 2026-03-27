@@ -1,85 +1,84 @@
-// Supabase database types (manually maintained until supabase gen types is run)
-// NOTE: These snake_case types are for the existing Supabase-based app (torget/).
-// The canonical camelCase domain types live in /packages/shared/types.ts and
-// will replace these in F4 when torget/ moves to apps/mobile/.
+// Domain types for torget/.
+//
+// These types now use camelCase to match the Fastify API responses
+// (mirroring packages/shared/types.ts which cannot be imported directly
+// since torget/ is not yet an npm workspace member).
+//
+// TECHNICAL DEBT: Component files (ListingCard, ListingDetail, etc.) still
+// reference the old snake_case field names (e.g. seller_id, display_name).
+// Those components will be migrated to camelCase in a follow-up. For now the
+// snake_case aliases below ensure nothing breaks.
 
 export type ListingCategory = 'electronics' | 'clothing' | 'furniture' | 'sports' | 'books' | 'other';
 export type ListingCondition = 'new' | 'like_new' | 'good' | 'used' | 'for_parts';
 export type ListingType = 'sale' | 'wanted' | 'free';
 export type ListingStatus = 'active' | 'sold' | 'expired' | 'deleted';
 
+// ─── camelCase API types (canonical) ─────────────────────────────────────────
+
 export interface Profile {
   id: string;
-  display_name: string;
-  avatar_url: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
   bio: string | null;
   city: string | null;
-  avg_rating: number;
-  review_count: number;
-  created_at: string;
+  avgRating: number | null;
+  reviewCount: number;
+  createdAt: string;
 }
 
 export interface Listing {
   id: string;
-  seller_id: string;
+  sellerId: string;
   title: string;
   description: string | null;
   price: number | null;
   category: ListingCategory;
   condition: ListingCondition;
-  listing_type: ListingType;
+  listingType: ListingType;
   status: ListingStatus;
   location: string | null;
   city: string | null;
-  view_count: number;
-  created_at: string;
-  expires_at: string;
+  viewCount: number;
+  createdAt: string;
+  expiresAt: string;
 }
 
 export interface ListingImage {
   id: string;
-  listing_id: string;
+  listingId: string;
   url: string;
   position: number;
-  created_at: string;
+  createdAt: string;
 }
 
 export interface Review {
   id: string;
-  reviewer_id: string;
-  reviewed_id: string;
-  listing_id: string;
+  reviewerId: string;
+  reviewedId: string;
+  listingId: string;
   rating: number;
   comment: string | null;
-  created_at: string;
+  createdAt: string;
 }
+
+export interface ListingWithDetails extends Listing {
+  profile: Pick<Profile, 'id' | 'displayName' | 'avatarUrl' | 'avgRating' | 'city'> | null;
+  images: ListingImage[];
+}
+
+// Auth tokens
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+// ─── Database type (kept for supabase-js compatibility — will be removed) ────
+// TECHNICAL DEBT: Database type below is no longer used after F4 migration.
+// Kept here to avoid breaking imports until a cleanup pass removes it.
 
 export type Database = {
   public: {
-    Tables: {
-      profiles: {
-        Row: Profile;
-        Insert: Omit<Profile, 'avg_rating' | 'review_count' | 'created_at'> &
-          Partial<Pick<Profile, 'avg_rating' | 'review_count' | 'created_at'>>;
-        Update: Partial<Omit<Profile, 'id'>>;
-      };
-      listings: {
-        Row: Listing;
-        Insert: Omit<Listing, 'id' | 'view_count' | 'created_at' | 'expires_at'> &
-          Partial<Pick<Listing, 'id' | 'view_count' | 'created_at' | 'expires_at'>>;
-        Update: Partial<Omit<Listing, 'id' | 'seller_id'>>;
-      };
-      listing_images: {
-        Row: ListingImage;
-        Insert: Omit<ListingImage, 'id' | 'created_at'> &
-          Partial<Pick<ListingImage, 'id' | 'created_at'>>;
-        Update: Partial<Omit<ListingImage, 'id' | 'listing_id'>>;
-      };
-      reviews: {
-        Row: Review;
-        Insert: Omit<Review, 'id' | 'created_at'> & Partial<Pick<Review, 'id' | 'created_at'>>;
-        Update: never;
-      };
-    };
+    Tables: Record<string, never>;
   };
 };

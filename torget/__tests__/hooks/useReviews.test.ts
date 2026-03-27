@@ -2,31 +2,20 @@
  * Unit tests for hooks/useReviews.ts
  *
  * Focuses on:
- * - useCreateReview: calls supabase insert with correct fields
- * - useCreateReview: throws when reviewer_id === reviewed_id (self-review)
+ * - useCreateReview: calls api.post('/reviews') with correct fields
+ * - useCreateReview: reviewer_id is NOT sent (set server-side)
+ * - useCreateReview: throws when reviewer === reviewed (self-review guard)
  */
 
 // ---- Mock setup -------------------------------------------------------------
 
-const mockInsert = jest.fn();
-const mockFromReviews = jest.fn();
+const mockApiPost = jest.fn();
+const mockApiGet = jest.fn();
 
-jest.mock('../../lib/supabase', () => ({
-  supabase: {
-    from: (...args: unknown[]) => {
-      mockFromReviews(...args);
-      return {
-        insert: (...insertArgs: unknown[]) => {
-          mockInsert(...insertArgs);
-          return Promise.resolve({ data: null, error: null });
-        },
-        select: () => ({
-          eq: () => ({
-            order: () => Promise.resolve({ data: [], error: null }),
-          }),
-        }),
-      };
-    },
+jest.mock('../../lib/api', () => ({
+  api: {
+    post: (...args: unknown[]) => mockApiPost(...args),
+    get: (...args: unknown[]) => mockApiGet(...args),
   },
 }));
 
@@ -61,65 +50,76 @@ import type { CreateReviewInput } from '../../hooks/useReviews';
 describe('useCreateReview', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset to logged-in state
     jest.requireMock('../../store/auth').useAuthStore.mockReturnValue({
       session: { user: { id: 'reviewer-111' } },
     });
+    mockApiPost.mockResolvedValue(undefined);
   });
 
-  it('calls supabase insert with correct fields', async () => {
+  it('calls api.post("/reviews") with correct fields', async () => {
     const hook = useCreateReview();
 
     const input: CreateReviewInput = {
-      reviewed_id: 'seller-222',
-      listing_id: 'listing-333',
+      reviewedId: 'seller-222',
+      listingId: 'listing-333',
       rating: 4,
       comment: 'God handel!',
     };
 
     await hook.mutateAsync(input);
 
-    expect(mockFromReviews).toHaveBeenCalledWith('reviews');
-    expect(mockInsert).toHaveBeenCalledWith({
-      reviewed_id: 'seller-222',
-      listing_id: 'listing-333',
+    expect(mockApiPost).toHaveBeenCalledWith('/reviews', {
+      reviewedId: 'seller-222',
+      listingId: 'listing-333',
       rating: 4,
       comment: 'God handel!',
     });
+  });
+
+  it('does NOT include reviewer_id in the request body (set server-side)', async () => {
+    const hook = useCreateReview();
+
+    const input: CreateReviewInput = {
+      reviewedId: 'seller-222',
+      listingId: 'listing-333',
+      rating: 5,
+    };
+
+    await hook.mutateAsync(input);
+
+    const callBody = mockApiPost.mock.calls[0][1] as Record<string, unknown>;
+    expect(callBody).not.toHaveProperty('reviewerId');
+    expect(callBody).not.toHaveProperty('reviewer_id');
   });
 
   it('sets comment to null when not provided', async () => {
     const hook = useCreateReview();
 
     const input: CreateReviewInput = {
-      reviewed_id: 'seller-222',
-      listing_id: 'listing-333',
+      reviewedId: 'seller-222',
+      listingId: 'listing-333',
       rating: 5,
     };
 
     await hook.mutateAsync(input);
 
-    expect(mockInsert).toHaveBeenCalledWith(
+    expect(mockApiPost).toHaveBeenCalledWith(
+      '/reviews',
       expect.objectContaining({ comment: null }),
     );
   });
 
-  it('throws when reviewer_id equals reviewed_id (self-review)', async () => {
-    // reviewer-111 tries to review themselves
+  it('throws when reviewer equals reviewed (self-review guard)', async () => {
     const hook = useCreateReview();
 
     const input: CreateReviewInput = {
-      reviewed_id: 'reviewer-111', // same as session user id
-      listing_id: 'listing-333',
+      reviewedId: 'reviewer-111', // same as session user id
+      listingId: 'listing-333',
       rating: 5,
     };
 
-    await expect(hook.mutateAsync(input)).rejects.toThrow(
-      'Du kan ikke anmelde deg selv.',
-    );
-
-    // supabase.insert should NOT have been called
-    expect(mockInsert).not.toHaveBeenCalled();
+    await expect(hook.mutateAsync(input)).rejects.toThrow('Du kan ikke anmelde deg selv.');
+    expect(mockApiPost).not.toHaveBeenCalled();
   });
 
   it('throws if not logged in', async () => {
@@ -130,26 +130,23 @@ describe('useCreateReview', () => {
     const hook = useCreateReview();
 
     const input: CreateReviewInput = {
-      reviewed_id: 'seller-222',
-      listing_id: 'listing-333',
+      reviewedId: 'seller-222',
+      listingId: 'listing-333',
       rating: 3,
     };
 
     await expect(hook.mutateAsync(input)).rejects.toThrow('Ikke innlogget');
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockApiPost).not.toHaveBeenCalled();
   });
 
-  it('throws generic error when supabase returns an error', async () => {
-    jest.requireMock('../../lib/supabase').supabase.from = (_table: string) => ({
-      insert: (..._args: unknown[]) =>
-        Promise.resolve({ data: null, error: { message: 'unique_violation' } }),
-    });
+  it('throws generic error when api.post fails', async () => {
+    mockApiPost.mockRejectedValue(new Error('Noe gikk galt. Prøv igjen.'));
 
     const hook = useCreateReview();
 
     const input: CreateReviewInput = {
-      reviewed_id: 'seller-222',
-      listing_id: 'listing-333',
+      reviewedId: 'seller-222',
+      listingId: 'listing-333',
       rating: 2,
     };
 

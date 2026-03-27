@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { useAuthStore } from '../store/auth';
 import type { Profile, Listing } from '../lib/types';
 
@@ -9,73 +9,56 @@ export interface ProfileWithListings {
   closedListings: Listing[];
 }
 
+export interface UpdateProfileInput {
+  displayName?: string;
+  city?: string;
+  avatarUrl?: string;
+}
+
 // ---- Query functions -------------------------------------------------------
 
+async function fetchProfile(userId: string): Promise<Profile> {
+  try {
+    return await api.get<Profile>(`/profiles/${userId}`);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('404')) {
+      throw new Error('Profilen finnes ikke.');
+    }
+    console.error('[useProfile] fetchProfile:', err);
+    throw new Error('Noe gikk galt. Prøv igjen.');
+  }
+}
+
 async function fetchOwnProfile(userId: string): Promise<ProfileWithListings> {
-  const [profileRes, listingsRes] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', userId).single(),
-    supabase
-      .from('listings')
-      .select('*')
-      .eq('seller_id', userId)
-      .in('status', ['active', 'sold', 'expired'])
-      .order('created_at', { ascending: false }),
+  const [profile, listings] = await Promise.all([
+    fetchProfile(userId),
+    api.get<Listing[]>('/listings', { sellerId: userId }).catch((err) => {
+      console.error('[useProfile] fetchOwnListings:', err);
+      throw new Error('Noe gikk galt. Prøv igjen.');
+    }),
   ]);
 
-  if (profileRes.error) {
-    console.error('[useProfile] fetchOwnProfile:', profileRes.error.message);
-    throw new Error('Noe gikk galt. Prøv igjen.');
-  }
-
-  if (listingsRes.error) {
-    console.error('[useProfile] fetchOwnListings:', listingsRes.error.message);
-    throw new Error('Noe gikk galt. Prøv igjen.');
-  }
-
-  const listings = (listingsRes.data ?? []) as Listing[];
   return {
-    profile: profileRes.data as Profile,
+    profile,
     activeListings: listings.filter((l) => l.status === 'active'),
     closedListings: listings.filter((l) => l.status !== 'active'),
   };
 }
 
 async function fetchPublicProfile(userId: string): Promise<ProfileWithListings> {
-  const [profileRes, listingsRes] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', userId).single(),
-    supabase
-      .from('listings')
-      .select('*')
-      .eq('seller_id', userId)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false }),
+  const [profile, listings] = await Promise.all([
+    fetchProfile(userId),
+    api.get<Listing[]>('/listings', { sellerId: userId, status: 'active' }).catch((err) => {
+      console.error('[useProfile] fetchPublicListings:', err);
+      throw new Error('Noe gikk galt. Prøv igjen.');
+    }),
   ]);
 
-  if (profileRes.error) {
-    if (profileRes.error.code === 'PGRST116') {
-      throw new Error('Profilen finnes ikke.');
-    }
-    console.error('[useProfile] fetchPublicProfile:', profileRes.error.message);
-    throw new Error('Noe gikk galt. Prøv igjen.');
-  }
-
-  if (listingsRes.error) {
-    console.error('[useProfile] fetchPublicListings:', listingsRes.error.message);
-    throw new Error('Noe gikk galt. Prøv igjen.');
-  }
-
-  const listings = (listingsRes.data ?? []) as Listing[];
   return {
-    profile: profileRes.data as Profile,
+    profile,
     activeListings: listings,
     closedListings: [],
   };
-}
-
-export interface UpdateProfileInput {
-  display_name?: string;
-  city?: string;
-  avatar_url?: string;
 }
 
 // ---- Hooks -----------------------------------------------------------------
@@ -105,16 +88,12 @@ export function useUpdateProfile() {
 
   return useMutation({
     mutationFn: async (input: UpdateProfileInput) => {
-      const userId = session?.user?.id;
-      if (!userId) throw new Error('Ikke innlogget');
+      if (!session?.user?.id) throw new Error('Ikke innlogget');
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(input)
-        .eq('id', userId);
-
-      if (error) {
-        console.error('[useProfile] updateProfile:', error.message);
+      try {
+        await api.patch('/profiles/me', input);
+      } catch (err) {
+        console.error('[useProfile] updateProfile:', err);
         throw new Error('Noe gikk galt. Prøv igjen.');
       }
     },
@@ -134,17 +113,12 @@ export function useMarkAsSold(listingId: string) {
 
   return useMutation({
     mutationFn: async () => {
-      const userId = session?.user?.id;
-      if (!userId) throw new Error('Ikke innlogget');
+      if (!session?.user?.id) throw new Error('Ikke innlogget');
 
-      const { error } = await supabase
-        .from('listings')
-        .update({ status: 'sold' })
-        .eq('id', listingId)
-        .eq('seller_id', userId);
-
-      if (error) {
-        console.error('[useProfile] markAsSold:', error.message);
+      try {
+        await api.patch(`/listings/${listingId}/sold`);
+      } catch (err) {
+        console.error('[useProfile] markAsSold:', err);
         throw new Error('Noe gikk galt. Prøv igjen.');
       }
     },

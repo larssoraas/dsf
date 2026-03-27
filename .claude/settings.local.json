@@ -18,7 +18,18 @@
       "Bash(/usr/local/bin/npx tsc:*)",
       "Bash(ls ~/.nvm/versions/node/*/bin/npx)",
       "Bash(/Users/larssoraas/.nvm/versions/node/v20.20.2/bin/npx tsc:*)",
-      "Bash(/Users/larssoraas/.nvm/versions/node/v20.20.2/bin/node --version)"
+      "Bash(/Users/larssoraas/.nvm/versions/node/v20.20.2/bin/node --version)",
+      "Bash(/usr/local/bin/npx jest:*)",
+      "Bash(node ./node_modules/.bin/jest --watchAll=false)",
+      "Bash(~/.nvm/versions/node/v20.20.2/bin/npx jest:*)",
+      "Bash(~/.nvm/versions/node/v20.20.2/bin/node --version 2>&1)",
+      "Bash(PATH=\"$HOME/.nvm/versions/node/v20.20.2/bin:$PATH\" npx jest --watchAll=false)",
+      "Bash(grep -rn Databaseb /Users/larssoraas/Dev/2026/dsf/torget --include=*.ts --include=*.tsx)",
+      "Bash(grep -rn \"seller_id\\\\|display_name\\\\|avatar_url\\\\|listing_type\\\\|created_at\\\\|seller_Id\\\\|review_id\" /Users/larssoraas/Dev/2026/dsf/torget --include=*.ts --include=*.tsx)",
+      "Bash(grep:*)",
+      "Bash(/Users/larssoraas/Dev/2026/dsf/torget/node_modules/.bin/tsc --noEmit)",
+      "Bash(~/.nvm/versions/node/v20.20.2/bin/node ~/.nvm/versions/node/v20.20.2/bin/tsc --noEmit --project /Users/larssoraas/Dev/2026/dsf/torget/tsconfig.json)",
+      "Bash(~/.nvm/versions/node/v20.20.2/bin/node /Users/larssoraas/Dev/2026/dsf/torget/node_modules/.bin/tsc --noEmit --project /Users/larssoraas/Dev/2026/dsf/torget/tsconfig.json)"
     ]
   }
 }

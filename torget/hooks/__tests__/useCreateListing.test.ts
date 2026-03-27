@@ -5,16 +5,15 @@ import React from 'react';
 // ---- Mocks ----
 
 const mockUpload = jest.fn();
-const mockInsert = jest.fn();
-const mockFrom = jest.fn();
+const mockApiPost = jest.fn();
 
 jest.mock('../../lib/storage', () => ({
   uploadListingImage: (...args: unknown[]) => mockUpload(...args),
 }));
 
-jest.mock('../../lib/supabase', () => ({
-  supabase: {
-    from: (...args: unknown[]) => mockFrom(...args),
+jest.mock('../../lib/api', () => ({
+  api: {
+    post: (...args: unknown[]) => mockApiPost(...args),
   },
 }));
 
@@ -48,18 +47,6 @@ function makeWrapper() {
   return Wrapper;
 }
 
-function setupSupabaseMock(listingData: object) {
-  const selectMock = jest.fn().mockReturnValue({
-    single: jest.fn().mockResolvedValue({ data: listingData, error: null }),
-  });
-  mockInsert.mockReturnValue({ select: selectMock });
-  mockFrom.mockImplementation((table: string) => {
-    if (table === 'listings') return { insert: mockInsert };
-    if (table === 'listing_images') return { insert: jest.fn().mockResolvedValue({ error: null }) };
-    return {};
-  });
-}
-
 const baseInput = {
   images: ['file:///img1.jpg', 'file:///img2.jpg'],
   title: 'Test annonse',
@@ -77,16 +64,14 @@ describe('useCreateListing', () => {
     jest.clearAllMocks();
   });
 
-  it('vellykket opprettelse — kaller supabase insert med riktige data', async () => {
+  it('vellykket opprettelse — kaller uploadListingImage og api.post("/listings")', async () => {
     mockRequestForegroundPermissionsAsync.mockResolvedValue({ status: 'granted' });
     mockGetCurrentPositionAsync.mockResolvedValue({
       coords: { latitude: 59.9139, longitude: 10.7522 },
     });
     mockReverseGeocodeAsync.mockResolvedValue([{ city: 'Oslo', subregion: null }]);
     mockUpload.mockResolvedValue('https://example.com/img1.jpg');
-
-    const listing = { id: 'listing-abc', title: 'Test annonse' };
-    setupSupabaseMock(listing);
+    mockApiPost.mockResolvedValue({ id: 'listing-abc', title: 'Test annonse' });
 
     const { result } = renderHook(() => useCreateListing(), {
       wrapper: makeWrapper(),
@@ -96,25 +81,34 @@ describe('useCreateListing', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockInsert).toHaveBeenCalledWith(
+    // uploadListingImage called once per image
+    expect(mockUpload).toHaveBeenCalledTimes(2);
+    expect(mockUpload).toHaveBeenCalledWith('file:///img1.jpg');
+
+    // api.post called with listing payload (no seller_id — set server-side)
+    expect(mockApiPost).toHaveBeenCalledWith(
+      '/listings',
       expect.objectContaining({
-        seller_id: 'user-123',
         title: 'Test annonse',
         price: 500,
         category: 'electronics',
         condition: 'good',
-        listing_type: 'sale',
+        listingType: 'sale',
         city: 'Oslo',
+        imageUrls: ['https://example.com/img1.jpg', 'https://example.com/img1.jpg'],
       }),
     );
+
+    // seller_id must NOT be in the request body
+    const callBody = mockApiPost.mock.calls[0][1] as Record<string, unknown>;
+    expect(callBody).not.toHaveProperty('sellerId');
+    expect(callBody).not.toHaveProperty('seller_id');
   });
 
-  it('location-avslag — setter location=null og city=null (ingen krasj)', async () => {
+  it('location-avslag — setter location=null og city=null', async () => {
     mockRequestForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
     mockUpload.mockResolvedValue('https://example.com/img1.jpg');
-
-    const listing = { id: 'listing-xyz', title: 'Test annonse' };
-    setupSupabaseMock(listing);
+    mockApiPost.mockResolvedValue({ id: 'listing-xyz', title: 'Test annonse' });
 
     const { result } = renderHook(() => useCreateListing(), {
       wrapper: makeWrapper(),
@@ -124,7 +118,8 @@ describe('useCreateListing', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockInsert).toHaveBeenCalledWith(
+    expect(mockApiPost).toHaveBeenCalledWith(
+      '/listings',
       expect.objectContaining({
         location: null,
         city: null,
@@ -138,7 +133,7 @@ describe('useCreateListing', () => {
       coords: { latitude: 59.9139, longitude: 10.7522 },
     });
     mockReverseGeocodeAsync.mockResolvedValue([{ city: 'Oslo', subregion: null }]);
-    mockUpload.mockRejectedValue(new Error('Bilde-upload feilet: network error'));
+    mockUpload.mockRejectedValue(new Error('Noe gikk galt. Prøv igjen.'));
 
     const { result } = renderHook(() => useCreateListing(), {
       wrapper: makeWrapper(),
@@ -149,5 +144,6 @@ describe('useCreateListing', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
 
     expect(result.current.error).toBeInstanceOf(Error);
+    expect(mockApiPost).not.toHaveBeenCalled();
   });
 });
