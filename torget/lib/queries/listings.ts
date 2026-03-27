@@ -17,6 +17,14 @@ export interface FeedParams {
   category?: ListingCategory;
 }
 
+export interface MapQueryParams {
+  lat: number;
+  lng: number;
+  radius: number; // km
+  page: number;
+  pageSize: number;
+}
+
 export interface SearchParams {
   query: string;
   page: number;
@@ -67,6 +75,23 @@ export async function searchListings(params: SearchParams): Promise<ListingWithD
     });
   } catch (err) {
     console.error('[listings] searchListings error:', err);
+    throw new Error('Noe gikk galt. Prøv igjen.');
+  }
+}
+
+export async function fetchMapListings(params: MapQueryParams): Promise<ListingWithDetails[]> {
+  const { lat, lng, radius, page, pageSize } = params;
+
+  try {
+    return await api.get<ListingWithDetails[]>('/listings', {
+      userLat: lat,
+      userLng: lng,
+      radius,
+      page,
+      pageSize,
+    });
+  } catch (err) {
+    console.error('[listings] fetchMapListings error:', err);
     throw new Error('Noe gikk galt. Prøv igjen.');
   }
 }
