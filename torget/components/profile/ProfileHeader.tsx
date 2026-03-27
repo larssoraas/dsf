@@ -44,7 +44,7 @@ export function ProfileHeader({ profile, isOwnProfile }: Props) {
       {profile.city ? <Text style={styles.city}>{profile.city}</Text> : null}
 
       <View style={styles.ratingContainer}>
-        <StarRating rating={profile.avgRating ?? 0} />
+        <StarRating rating={Number(profile.avgRating ?? 0)} />
         <Text style={styles.reviewCount}>
           {profile.reviewCount === 1
             ? '1 anmeldelse'

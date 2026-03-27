@@ -151,7 +151,7 @@ export function ListingDetail({ listing }: Props) {
             <Text style={styles.sellerName}>{listing.profile?.displayName}</Text>
             <View style={styles.sellerMeta}>
               <Text style={styles.sellerRating}>
-                {'★'} {listing.profile?.avgRating?.toFixed(1)}
+                {'★'} {listing.profile?.avgRating != null ? Number(listing.profile.avgRating).toFixed(1) : null}
               </Text>
               {listing.profile?.city ? (
                 <Text style={styles.sellerCity}> · {listing.profile.city}</Text>
