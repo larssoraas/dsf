@@ -2,21 +2,25 @@
 
 ## Produkt
 
-### Prokduktbeskrivelse
+> **Oppstart:** Fyll ut alle seksjoner under før agentprotokollen tas i bruk.
+> Disse verdiene injiseres i architect-, developer- og reviewer-prompts og er
+> forutsetningen for at agentene tar riktige valg.
 
-Placeholder
+### Produktbeskrivelse
+
+<!-- Hva er produktet? Hvem er brukerne? Hva løser det? -->
 
 ### Stack
 
-Placeholder
+<!-- Teknologi, rammeverk, versjoner, infrastruktur -->
 
 ### Designretning
 
-Placeholder
+<!-- Visuell stil, komponentbibliotek, UX-prinsipper -->
 
 ### Faser
 
-Placeholder
+<!-- Overordnet faseinndeling for hele produktet (ikke per feature) -->
 
 ## Utviklingsmodell: Agent-basert
 
