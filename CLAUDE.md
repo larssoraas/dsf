@@ -144,10 +144,12 @@ For HVER fase F i planen:
 
 #### Steg 3: Integrasjon og commit
 
+Kjøres automatisk etter siste fase — ingen pause eller bruker-godkjenning.
+
 ```
-1. Verifiser at alle faser fungerer sammen
-2. Oppdater plan med endelig status
-3. Temabaserte commits
+1. Kjør npx vitest run + npx playwright test — verifiser at alle faser fungerer sammen
+2. Oppdater plan med endelig status (Edit)
+3. Temabaserte commits — én commit per logisk tema
 ```
 
 #### Steg 4: Analyse og prosessforbedring
@@ -240,7 +242,6 @@ Mål tid for alle steg med `date +%s`. Presenter tabell etter fullført pipeline
 | Steg | Varighet | Kommentar |
 |------|----------|-----------|
 | Arkitektur + plan | Xs | — |
-| Bruker godkjenner | — | ekskludert |
 | F1: Implementering | Xs | — |
 | F1: QA (review+test) | Xs | parallelt |
 | F1: Fiks-runde N | Xs | [grunn] |
