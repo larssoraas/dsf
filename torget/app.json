@@ -23,10 +23,6 @@
       },
       "package": "no.torget.app"
     },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
     "plugins": ["expo-router", "expo-secure-store"],
     "scheme": "torget",
     "experiments": {
