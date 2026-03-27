@@ -82,6 +82,11 @@ For HVER fil du leverer, verifiser:
 - [ ] **SQL-migrasjoner**: kopieres IKKE av `tsc` — legg til eksplisitt `COPY migrations ./dist/.../migrations` i Dockerfile Stage 2
 - [ ] **Migrasjonsstrategi**: velg én — enten Drizzle-genererte migrasjoner (med `meta/_journal.json`) eller rå SQL-filer med egendefinert kjørelogikk. Bland aldri de to
 
+## Sjekkliste: Drizzle ORM
+
+- [ ] **Schema-sync**: ved ny SQL-constraint i migrasjonsfil (UNIQUE, INDEX) → oppdater tilsvarende `uniqueIndex`/`index` i `drizzle/schema.ts` i samme commit
+- [ ] **Positiv tilstandssjekk**: bruk alltid `isBuyer = myId === conv.buyerId` — aldri negativ `isBuyer = myId !== conv.sellerId`
+
 ## Sjekkliste: Jest / Testing
 
 - [ ] **jest.mock() factory**: klasser som brukes i mock-factory (`jest.mock('...', () => ({ ... }))`) MÅ defineres inne i factory-funksjonen — `babel-plugin-jest-hoist` løfter `jest.mock()` over `class`-deklarasjoner og setter dem i TDZ
