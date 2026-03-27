@@ -24,6 +24,18 @@ const TABS: TabConfig[] = [
     activeIcon: 'search',
   },
   {
+    name: 'map',
+    title: 'Kart',
+    icon: 'map-outline',
+    activeIcon: 'map',
+  },
+  {
+    name: 'messages',
+    title: 'Meldinger',
+    icon: 'chatbubble-outline',
+    activeIcon: 'chatbubble',
+  },
+  {
     name: 'post',
     title: 'Legg ut',
     icon: 'add-circle-outline',

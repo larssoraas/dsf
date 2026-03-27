@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { fetchListingById } from '@/lib/queries/listings';
+import { startConversation } from '@/lib/queries/conversations';
 import { ListingDetail } from '@/components/listing/ListingDetail';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { useAuthStore } from '@/store/auth';
@@ -12,6 +13,7 @@ export default function ListingScreen() {
   const router = useRouter();
   const { session } = useAuthStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isStartingConversation, setIsStartingConversation] = useState(false);
 
   const { data: listing, isLoading, isError } = useQuery({
     queryKey: ['listing', id],
@@ -26,6 +28,24 @@ export default function ListingScreen() {
       router.push(`/listing/${id}/review`);
     }
   };
+
+  const handleContactSeller = async () => {
+    if (!session) {
+      setShowAuthModal(true);
+      return;
+    }
+    setIsStartingConversation(true);
+    try {
+      const conversation = await startConversation(id);
+      router.push(`/conversation/${conversation.id}`);
+    } catch (err) {
+      console.error('[listing] startConversation error:', err);
+    } finally {
+      setIsStartingConversation(false);
+    }
+  };
+
+  const isOwnListing = Boolean(session && listing && session.user.id === listing.sellerId);
 
   return (
     <>
@@ -60,6 +80,20 @@ export default function ListingScreen() {
         <>
           <ListingDetail listing={listing} />
           <View style={styles.reviewButtonContainer}>
+            {!isOwnListing && session && (
+              <TouchableOpacity
+                style={styles.contactButton}
+                onPress={handleContactSeller}
+                disabled={isStartingConversation}
+                accessibilityRole="button"
+                accessibilityLabel="Kontakt selger"
+                testID="contact-seller-button"
+              >
+                <Text style={styles.contactButtonText}>
+                  {isStartingConversation ? 'Laster…' : 'Kontakt selger'}
+                </Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.reviewButton}
               onPress={handleReviewPress}
@@ -109,6 +143,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
+    gap: 8,
+  },
+  contactButton: {
+    backgroundColor: '#3b82f6',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  contactButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   reviewButton: {
     backgroundColor: '#f3f4f6',

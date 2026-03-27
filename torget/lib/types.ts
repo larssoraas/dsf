@@ -62,6 +62,27 @@ export interface ListingWithDetails extends Listing {
   images: ListingImage[];
 }
 
+export interface Conversation {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  buyerId: string;
+  sellerId: string;
+  otherPartyName: string | null;
+  createdAt: string;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  type: 'message' | 'offer';
+  offerAmount: number | null;
+  offerStatus: 'accepted' | 'declined' | null;
+  createdAt: string;
+}
+
 // Auth tokens
 export interface AuthTokens {
   accessToken: string;
