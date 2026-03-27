@@ -13,6 +13,6 @@
       "@torget/shared": ["../../packages/shared/index.ts"]
     }
   },
-  "include": ["src", "drizzle"],
+  "include": ["src", "drizzle", "scripts"],
   "exclude": ["node_modules", "dist"]
 }
