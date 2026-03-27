@@ -101,9 +101,7 @@ describe('POST /auth/register', () => {
     expect(response.statusCode).toBe(201);
     const body = JSON.parse(response.payload) as Record<string, unknown>;
     expect(body).toMatchObject({
-      accessToken: 'access_token',
-      refreshToken: 'refresh_token',
-      user: { id: 'user-1', email: 'test@example.com' },
+      data: { accessToken: 'access_token', refreshToken: 'refresh_token', user: { id: 'user-1', email: 'test@example.com' } },
     });
   });
 
@@ -181,8 +179,7 @@ describe('POST /auth/login', () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload) as Record<string, unknown>;
     expect(body).toMatchObject({
-      accessToken: 'access_token',
-      refreshToken: 'refresh_token',
+      data: { accessToken: 'access_token', refreshToken: 'refresh_token' },
     });
   });
 
@@ -265,8 +262,7 @@ describe('POST /auth/refresh', () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload) as Record<string, unknown>;
     expect(body).toMatchObject({
-      accessToken: 'new_access_token',
-      refreshToken: 'new_refresh_token',
+      data: { accessToken: 'new_access_token', refreshToken: 'new_refresh_token' },
     });
   });
 

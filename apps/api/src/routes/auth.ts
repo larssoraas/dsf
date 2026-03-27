@@ -102,9 +102,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       ]);
 
       return reply.code(201).send({
-        accessToken,
-        refreshToken,
-        user: { id: result.id, email: result.email },
+        data: { accessToken, refreshToken, user: { id: result.id, email: result.email } },
       });
     },
   );
@@ -156,9 +154,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
       ]);
 
       return reply.send({
-        accessToken,
-        refreshToken,
-        user: { id: user.id, email: user.email },
+        data: { accessToken, refreshToken, user: { id: user.id, email: user.email } },
       });
     },
   );
@@ -246,7 +242,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
         signRefreshToken(user.id),
       ]);
 
-      return reply.send({ accessToken, refreshToken: newRefreshToken });
+      return reply.send({ data: { accessToken, refreshToken: newRefreshToken } });
     },
   );
 }
