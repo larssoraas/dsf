@@ -125,6 +125,49 @@ Lagt til i "Ufravikelige regler": `ALLTID skriv sluttrapport (doc/[iterasjon]-an
 
 ---
 
+## Fikser gjort utenfor Dark Factory
+
+Disse feilene ble oppdaget og fikset direkte av orkestratoren (ikke via agent-pipeline) etter at alle faser var godkjent.
+
+### Test-fiks: Jest hoisting (listings.test.ts)
+
+**Oppdaget:** 2 av 39 tester feilet med `TypeError: Right-hand side of 'instanceof' is not an object`.
+
+**Rotårsak:** `babel-plugin-jest-hoist` løfter `jest.mock()`-kall over `class MockApiError`-deklarasjonen i kildefilen. Klassen er i TDZ (temporal dead zone) når factory-funksjonen evaluereres første gang.
+
+**Fiks:** Klassen definert inne i mock-factory; hentet ut via `jest.requireMock()` i test-scope.
+
+**Filer endret:** `torget/lib/queries/__tests__/listings.test.ts`, `torget/__tests__/store/auth.test.ts`
+
+---
+
+### Docker-infrastruktur: 5 feil under `docker compose up`
+
+Alle feil ble funnet sekvensielt ved å lese container-logger etter hvert restart.
+
+| # | Symptom | Rotårsak | Fiks |
+|---|---------|----------|------|
+| 1 | `npm ci` feiler i builder-stage | `apps/api` har ingen `package-lock.json` (workspace-oppsett) | Byttet til `npm install` |
+| 2 | `tsc: Cannot find module '@torget/shared'` | Build-kontekst var `apps/api/` — `packages/shared/` utenfor kontekst | `context: .` (repo-rot) + `dockerfile: apps/api/Dockerfile` |
+| 3 | `Cannot find module 'dist/index.js'` | `tsc` infererer `rootDir` som repo-rot pga. `../../packages/shared`-alias → output-sti blir `dist/apps/api/src/index.js` | CMD korrigert til `node dist/apps/api/src/index.js` |
+| 4 | `ENOENT: scandir dist/apps/api/drizzle/migrations` | SQL-filer er ikke kompilert av `tsc` og ikke kopiert til dist | `COPY apps/api/drizzle/migrations ./dist/apps/api/drizzle/migrations` i Dockerfile |
+| 5 | `Can't find meta/_journal.json` | `drizzle-orm/migrator` krever Drizzle-genererte migrasjoner; vi har rå SQL-filer uten journal | `migrate.ts` skrevet om til å lese og kjøre `.sql`-filer direkte via `pg.Pool` |
+
+**Ekstra:** `0001_schema.sql` ble opprettet med alle `CREATE TABLE`-statements (manglet i migrasjonsmappen). `0001_search_vector_trigger.sql` omdøpt til `0002` for å sikre riktig kjøringsrekkefølge (tabeller → trigger).
+
+**Filer endret:** `apps/api/Dockerfile`, `apps/api/drizzle/migrate.ts`, `docker-compose.yml`, `apps/api/drizzle/migrations/0001_schema.sql` (ny), `0002_search_vector_trigger.sql` (omdøpt fra 0001)
+
+---
+
+### Lærdommer for neste iterasjon
+
+- **Docker-testing MÅ inngå i agent-pipeline** — f.eks. som del av tester-agentens sjekkliste: `docker compose up --build && curl /health`
+- **Drizzle-migrasjonskonfigurasjon** bør verifiseres av dev-agenten: enten genererte migrasjoner (`drizzle-kit generate`) eller rå SQL med egen kjørelogikk — ikke blandet
+- **tsc-rootDir** bør settes eksplisitt i `tsconfig.json` ved monorepo + path aliases for å unngå uventet output-struktur i Docker
+- **`package-lock.json` per workspace** bør genereres og committes, eller `Dockerfile` bør bruke `npm install` fra start
+
+---
+
 ## Sammendrag
 
 Iterasjon 2 leverte full stack-migrasjon fra Supabase til selvhostet Docker-stack:
