@@ -134,7 +134,7 @@ export default function EditProfileScreen() {
   const isBusy = uploadingAvatar || updateProfile.isPending;
 
   const currentAvatarUrl = avatarUri ?? data?.profile?.avatar_url ?? null;
-  const initials = (displayName || data?.profile?.display_name ?? '?')
+  const initials = (displayName || (data?.profile?.display_name ?? '?'))
     .charAt(0)
     .toUpperCase();
 
