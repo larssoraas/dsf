@@ -259,6 +259,7 @@ Tre porter, alle agent-drevne. Ingen menneskelig godkjenning mellom steg.
 - **ALDRI la orkestratoren skrive kode selv** — all kode via agenter
 - **ALLTID oppdater plandokumentet etter hver fase** — med status, endrede filer, review-funn og testresultat. Gjøres FØR neste fase starter. Ufravikelig.
 - **ALLTID kjor review og test parallelt**
+- **ALLTID skriv sluttrapport** (`doc/[iterasjon]-analyse.md`) automatisk etter siste fase — ingen pause, ingen bruker-prompt. Dette er Steg 4 og er obligatorisk.
 
 ---
 
