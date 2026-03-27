@@ -278,13 +278,10 @@ export async function listingsRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   // POST /listings — create listing (requires auth)
-  fastify.post(
+  fastify.post<{ Body: CreateListingInput }>(
     '/',
     { preHandler: fastify.authenticate },
-    async (
-      request: FastifyRequest<{ Body: CreateListingInput }>,
-      reply: FastifyReply,
-    ) => {
+    async (request, reply) => {
       const {
         title,
         description,
@@ -346,13 +343,10 @@ export async function listingsRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   // PATCH /listings/:id/sold — mark as sold (requires ownership)
-  fastify.patch(
+  fastify.patch<{ Params: ListingParams }>(
     '/:id/sold',
     { preHandler: fastify.authenticate },
-    async (
-      request: FastifyRequest<{ Params: ListingParams }>,
-      reply: FastifyReply,
-    ) => {
+    async (request, reply) => {
       const { id } = request.params;
       const userId = request.user.id;
 

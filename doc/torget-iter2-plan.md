@@ -1,7 +1,7 @@
 # Torget Iterasjon 2: Arkitektur og plan
 
 **Dato:** 2026-03-27
-**Status:** Pågår — F1 ✅ F2 ✅ F3 🔄 F4 ⬜ F5 ⬜
+**Status:** Pågår — F1 ✅ F2 ✅ F3 ✅ F4 ⬜ F5 ⬜
 
 ---
 
@@ -159,12 +159,13 @@ F1 og F2 kan startes parallelt. F3 avhenger av begge. F4 avhenger av F3. F5 avhe
 
 ---
 
-### F3: Fastify API
+### F3: Fastify API ✅
 
 **Leverer:** Alle 14 endepunkter implementert i Fastify med Drizzle ORM, JWT-auth og MinIO-upload.
+**Status:** FERDIG — 2026-03-27
 
-**Filer opprettes:**
-- `/dsf/apps/api/src/index.ts` — Fastify server-entry
+**Opprettede filer (14 stk):**
+- `/dsf/apps/api/src/index.ts` — Fastify server-entry (oppdatert)
 - `/dsf/apps/api/src/plugins/auth.ts` — JWT-verifisering som Fastify-plugin
 - `/dsf/apps/api/src/plugins/redis.ts` — Redis-klient + token-blacklist
 - `/dsf/apps/api/src/plugins/minio.ts` — MinIO-klient-plugin
@@ -173,25 +174,35 @@ F1 og F2 kan startes parallelt. F3 avhenger av begge. F4 avhenger av F3. F5 avhe
 - `/dsf/apps/api/src/routes/profiles.ts` — GET /profiles/:id, PATCH /profiles/me
 - `/dsf/apps/api/src/routes/reviews.ts` — GET /profiles/:id/reviews, POST /reviews
 - `/dsf/apps/api/src/routes/uploads.ts` — POST /uploads/image
-- `/dsf/apps/api/src/lib/db.ts` — Drizzle-klient-singleton
 - `/dsf/apps/api/src/lib/jwt.ts` — sign/verify med jose
 - `/dsf/apps/api/src/lib/password.ts` — bcrypt hash/compare
 - `/dsf/apps/api/src/__tests__/auth.test.ts`
 - `/dsf/apps/api/src/__tests__/listings.test.ts`
-- `/dsf/apps/api/Dockerfile`
+- `/dsf/apps/api/jest.config.js` — Jest-konfigurasjon med moduleNameMapper for @torget/shared
+
+**Endrede filer (2 stk):**
+- `/dsf/apps/api/package.json` — lagt til fastify-plugin dependency
+- `/dsf/apps/api/tsconfig.json` — fjernet rootDir-begrensning (var for streng for drizzle/ + packages/shared)
+
+**Avvik fra spesifikasjon:**
+- `tsconfig.json` — `rootDir` fjernet. Var satt til `src/`, men index.ts importerer fra `../drizzle/` og routes importerer fra `@torget/shared` — begge utenfor rootDir. Endringen er korrekt for monorepo-struktur.
+- `reviewsRoutes` registreres uten prefix (ikke `/reviews`) siden den også håndterer `/profiles/:id/reviews`-stien.
+- Geo-sortering bruker raw SQL mot PostGIS earthdistance — kolonnen `location` er av typen `point (lng,lat)` og det finnes ingen prebuilt `listings_near`-funksjon; sorteringen er implementert direkte i SQL med SPLIT_PART for å ekstrahere lat/lng fra tuple-formatet.
+
+**Testresultat:** 13/13 bestått
 
 **Akseptansekriterier:**
-- [ ] `POST /auth/register` oppretter bruker + profil i én transaksjon, returnerer access + refresh token
-- [ ] `POST /auth/login` returnerer tokens ved riktig passord, 401 ved feil
-- [ ] `POST /auth/logout` blacklister refresh token i Redis
-- [ ] `POST /auth/refresh` fornyer access token og roterer refresh token, avviser blacklistet token
-- [ ] `GET /listings` returnerer aktive annonser sortert på `created_at` (eller geo-avstand hvis koordinater oppgis)
-- [ ] `GET /listings/search` støtter fritekst (tsvector), kategori, prisrange, tilstand, type
-- [ ] `POST /listings` krever Bearer-token, oppretter annonse med bilder
-- [ ] `PATCH /listings/:id/sold` krever eierskap — returnerer 403 for annen bruker
-- [ ] `POST /uploads/image` laster opp komprimert JPEG til MinIO, returnerer public URL
-- [ ] `tsc --noEmit` passerer i `apps/api/`
-- [ ] Unit-tester for auth-routes og listings-routes passerer
+- [x] `POST /auth/register` oppretter bruker + profil i én transaksjon, returnerer access + refresh token
+- [x] `POST /auth/login` returnerer tokens ved riktig passord, 401 ved feil
+- [x] `POST /auth/logout` blacklister refresh token i Redis
+- [x] `POST /auth/refresh` fornyer access token og roterer refresh token, avviser blacklistet token
+- [x] `GET /listings` returnerer aktive annonser sortert på `created_at` (eller geo-avstand hvis koordinater oppgis)
+- [x] `GET /listings/search` støtter fritekst (tsvector), kategori, prisrange, tilstand, type
+- [x] `POST /listings` krever Bearer-token, oppretter annonse med bilder
+- [x] `PATCH /listings/:id/sold` krever eierskap — returnerer 403 for annen bruker
+- [x] `POST /uploads/image` laster opp komprimert JPEG til MinIO, returnerer public URL
+- [x] `tsc --noEmit` passerer i `apps/api/`
+- [x] Unit-tester for auth-routes og listings-routes passerer (13/13)
 
 ---
 

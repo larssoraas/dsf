@@ -50,13 +50,10 @@ export async function profilesRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   // PATCH /profiles/me — update own profile (requires auth)
-  fastify.patch(
+  fastify.patch<{ Body: UpdateProfileBody }>(
     '/me',
     { preHandler: fastify.authenticate },
-    async (
-      request: FastifyRequest<{ Body: UpdateProfileBody }>,
-      reply: FastifyReply,
-    ) => {
+    async (request, reply) => {
       const userId = request.user.id;
       const { displayName, city, avatarUrl } = request.body;
 

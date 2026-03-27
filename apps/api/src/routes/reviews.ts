@@ -41,13 +41,10 @@ export async function reviewsRoutes(fastify: FastifyInstance): Promise<void> {
   );
 
   // POST /reviews — create a review (requires auth)
-  fastify.post(
+  fastify.post<{ Body: CreateReviewInput }>(
     '/',
     { preHandler: fastify.authenticate },
-    async (
-      request: FastifyRequest<{ Body: CreateReviewInput }>,
-      reply: FastifyReply,
-    ) => {
+    async (request, reply) => {
       const { reviewedId, listingId, rating, comment } = request.body;
       const reviewerId = request.user.id;
 

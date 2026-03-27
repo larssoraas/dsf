@@ -138,13 +138,10 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     },
   );
 
-  fastify.post(
+  fastify.post<{ Body: LogoutBody }>(
     '/logout',
     { preHandler: fastify.authenticate },
-    async (
-      request: FastifyRequest<{ Body: LogoutBody }>,
-      reply: FastifyReply,
-    ) => {
+    async (request, reply) => {
       const { refreshToken } = request.body;
 
       if (!refreshToken) {

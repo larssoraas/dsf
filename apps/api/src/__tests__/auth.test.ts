@@ -1,4 +1,5 @@
 import Fastify, { FastifyInstance } from 'fastify';
+import type Redis from 'ioredis';
 import { authRoutes } from '../routes/auth';
 
 // --- Module-level mocks ---
@@ -43,7 +44,8 @@ async function buildApp(): Promise<FastifyInstance> {
     isBlacklisted: jest.fn().mockResolvedValue(false),
     blacklist: jest.fn().mockResolvedValue(undefined),
   };
-  app.decorate('redis', mockRedis);
+  // Cast required: mock does not implement full Redis interface — only methods used by routes
+  app.decorate('redis', mockRedis as unknown as Redis & { isBlacklisted(t: string): Promise<boolean>; blacklist(t: string, ttl: number): Promise<void> });
   app.decorate('authenticate', async () => {
     // No-op authenticate for testing — routes that need it will override
   });
@@ -78,7 +80,7 @@ describe('POST /auth/register', () => {
     mockSignRefreshToken.mockResolvedValue('refresh_token');
 
     mockDb.transaction.mockImplementation(async (fn) => {
-      // Simulate the transaction callback
+      // Simulate the transaction callback — cast required: mock is not a full Drizzle tx
       const tx = {
         insert: () => ({
           values: () => ({
@@ -87,7 +89,7 @@ describe('POST /auth/register', () => {
           }),
         }),
       };
-      return fn(tx as Parameters<typeof fn>[0]);
+      return fn(tx as unknown as Parameters<typeof fn>[0]);
     });
 
     const response = await app.inject({
@@ -229,7 +231,8 @@ describe('POST /auth/refresh', () => {
       isBlacklisted: jest.fn().mockResolvedValue(false),
       blacklist: jest.fn().mockResolvedValue(undefined),
     };
-    appInstance.decorate('redis', mockRedis);
+    // Cast required: mock does not implement full Redis interface — only methods used by routes
+    appInstance.decorate('redis', mockRedis as unknown as Redis & { isBlacklisted(t: string): Promise<boolean>; blacklist(t: string, ttl: number): Promise<void> });
     appInstance.decorate('authenticate', async () => undefined);
     await appInstance.register(authRoutes, { prefix: '/auth' });
     await appInstance.ready();
