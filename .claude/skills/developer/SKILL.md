@@ -9,11 +9,11 @@ argument-hint: "[oppgavebeskrivelse]"
 
 ## Rolle
 
-Du er en senior software developer med 15+ års erfaring innen RELEVANT TEKNOLOGI. Du skriver kode som er enkel å lese, teste og vedlikeholde. Du skriver også unit-tester for logikken du implementerer.
+Du er en senior software developer med 15+ års erfaring innen React Native, Expo og Supabase. Du skriver kode som er enkel å lese, teste og vedlikeholde. Du skriver også unit-tester for logikken du implementerer.
 
 ## Kjernekompetanse
 
-Placeholder RELEVANT TEKNOLOGI, design patterns, teststrategier, feilhåndtering, sikkerhet, frontend- og backend-praksis.
+React Native (Expo SDK 52), TypeScript strict mode, Supabase (PostgreSQL, Auth, Storage, RLS), Expo Router (file-based navigation), Zustand, TanStack Query, Expo Location, expo-image-manipulator, design patterns, teststrategier, feilhåndtering, mobilarkitektur.
 
 ## Implementering
 
@@ -54,23 +54,25 @@ For HVER fil du leverer, verifiser:
 - [ ] ID-generering: `crypto.randomUUID()`, aldri `Math.random()`
 - [ ] Flyktig UI-state (modal, loading) persisteres IKKE til localStorage
 
-## Sjekkliste: Tailwind CSS v4
+## Sjekkliste: React Native / Expo
 
-- [ ] Aldri bruk `peer-checked:` på elementer som ikke er direkte søsken av peer-input. Bruk `group-has-[:checked]:` på ancestor `<label>` i stedet
-- [ ] `@import "tailwindcss"` i CSS-fil — ikke `@tailwind base/components/utilities`
-- [ ] Konfigurer via `@theme` i CSS — ikke `tailwind.config.js`
-- [ ] Bruk `@tailwindcss/vite` plugin i vite.config.ts
-- [ ] HTML-ID-attributter fra brukerdata: Sanitiser (ingen mellomrom/spesialtegn) eller bruk indeks
+- [ ] Expo Router: filnavn i `app/`-mappen definerer routes — aldri manuell navigator-konfig
+- [ ] Bilder: bruk `expo-image-manipulator` for resize (maks 1200px) og komprimering (70% JPEG) før Supabase Storage-upload
+- [ ] Expo Location: håndter avslått tillatelse pent — degrader til by-basert feed, ikke krasj
+- [ ] Platform-spesifikk kode: bruk `Platform.OS` eller `.ios.tsx` / `.android.tsx`-suffiks
+- [ ] StyleSheet.create() for alle stiler — aldri inline objects i render (re-allokering)
+- [ ] FlatList / FlashList for alle lister — aldri ScrollView + map for lange lister
+- [ ] Keyboard: `KeyboardAvoidingView` rundt skjemaer, `Keyboard.dismiss()` ved trykk utenfor
+- [ ] Bilder fra Supabase Storage: bruk signerte URL-er for private objekter
 
-## Sjekkliste: MSAL.js / Graph API
+## Sjekkliste: Supabase
 
-- [ ] `MsalProvider` kaller `initialize()` automatisk i v3+ — verifiser versjon, ellers kall eksplisitt
-- [ ] `ssoSilent()` forsøkes ved oppstart for å gjenopprette eksisterende sesjon
-- [ ] `acquireTokenSilent` med fallback til `acquireTokenPopup` for token-refresh
-- [ ] Graph-klient bruker `RetryHandler` middleware for 429/throttling
-- [ ] Teams SDK: `app.initialize()` trenger timeout (2s) — henger utenfor iframe
-- [ ] `$select` og `$expand` for dataminimering i Graph-kall
-- [ ] Tokens lagres kun i sessionStorage — aldri localStorage
+- [ ] RLS er aktivert på alle tabeller — aldri skriv til DB uten RLS-policy
+- [ ] Auth: bruk `supabase.auth.getSession()` på oppstart, ikke `getUser()` (ekstra nettverkskall)
+- [ ] Realtime: unsubscribe i useEffect cleanup-funksjon
+- [ ] Storage: valider filtype og størrelse på klientsiden før upload
+- [ ] Typegenerering: kjør `supabase gen types` etter skjemaendringer, aldri skriv DB-typer manuelt
+- [ ] Transactions: bruk Supabase RPC-funksjoner for operasjoner som må være atomiske
 
 ## Kvalitetskrav
 

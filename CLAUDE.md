@@ -8,19 +8,32 @@
 
 ### Produktbeskrivelse
 
-<!-- Hva er produktet? Hvem er brukerne? Hva løser det? -->
+**Torget** — en lokal markedsplass for kjøp, salg og gratis-gis av brukte ting. Mobile-first. Inspirert av finn.no, men enklere, raskere og med lokalt fokus.
+
+Brukere: privatpersoner som vil selge, kjøpe eller gi bort brukte ting i nærheten.
+
+Kjernefunksjoner: annonsering (til salgs / ønskes kjøpt / gis bort gratis), kartsøk, fritekst + filtrering, innebygd meldingssystem med budfunksjon, brukerprofil med anmeldelser, Vipps-betaling.
+
+Posisjonering: *"Det lokale torget — i lomma di."*
 
 ### Stack
 
-<!-- Teknologi, rammeverk, versjoner, infrastruktur -->
+- **Frontend:** React Native + Expo SDK 52, Expo Router (file-based), TypeScript strict
+- **Backend:** Supabase — PostgreSQL, Auth (e-post/passord), Storage
+- **State:** Zustand (UI-state) + TanStack Query (server-state/cache)
+- **Søk:** Supabase full-text search (tsvector) — ingen ekstern søketjeneste i MVP
+- **Lokasjon:** Expo Location + PostGIS (earthdistance) for nærhet-sortering
+- **Bilder:** Supabase Storage, komprimert via expo-image-manipulator
 
 ### Designretning
 
-<!-- Visuell stil, komponentbibliotek, UX-prinsipper -->
+Mobile-first. Enkel, rask annonsering (< 60 sek fra åpne app til publisert). Lokal-fokusert feed. Tillit via anmeldelser og verifiserte profiler.
 
 ### Faser
 
-<!-- Overordnet faseinndeling for hele produktet (ikke per feature) -->
+- **MVP**: Annonsering (CRUD), feed, fritekst-søk, brukerprofil
+- **V2**: Kartsøk, meldingssystem, budfunksjon
+- **V3**: Vipps-betaling, BankID-verifisering, push-varsler
 
 ## Utviklingsmodell: Agent-basert
 
@@ -141,9 +154,12 @@ For HVER fase F i planen:
     Review AVVIST -> Task(Dev, fiks funn) -> tilbake til 2b
     Test feilet -> Task(Dev, fiks feil) -> tilbake til 2b
 
-2d. OPPDATER PLAN (orkestratoren gjor dette med Edit)
-    - Huk av akseptansekriterier
-    - Dokumenter funn og avvik
+2d. OPPDATER PLAN — OBLIGATORISK før neste fase starter (orkestratoren med Edit)
+    - Status og dato
+    - Liste over alle endrede filer
+    - Review-funn (tabell: alvorlighet, beskrivelse, løsning)
+    - Testresultat (X/Y bestått)
+    - Alle akseptansekriterier huket av
 ```
 
 #### Steg 3: Integrasjon og commit
@@ -234,7 +250,7 @@ Tre porter, alle agent-drevne. Ingen menneskelig godkjenning mellom steg.
 
 - **ALDRI implementer noe over 150 linjer uten plan** (orkestratoren evaluerer planen selv)
 - **ALDRI la orkestratoren skrive kode selv** — all kode via agenter
-- **ALLTID oppdater plandokumentet etter hver fase**
+- **ALLTID oppdater plandokumentet etter hver fase** — med status, endrede filer, review-funn og testresultat. Gjøres FØR neste fase starter. Ufravikelig.
 - **ALLTID kjor review og test parallelt**
 
 ---
@@ -257,10 +273,10 @@ Mål tid for alle steg med `date +%s`. Presenter tabell etter fullført pipeline
 ## Kommandoer
 
 ```bash
-npm run dev              # Start Vite dev-server
-npm run build            # Bygg for produksjon
-npm run preview          # Forhandsvis produksjonsbygg
-npx vitest run           # Kjor unit-tester
-npx playwright test      # Kjor E2E-tester
+npx expo start           # Start Expo dev-server
+npx expo start --ios     # Start på iOS simulator
+npx expo start --android # Start på Android emulator
+npx jest --watchAll=false # Kjør unit-tester
 npx tsc --noEmit         # TypeScript typesjekk
+supabase gen types typescript --local > lib/types.ts  # Generer DB-typer
 ```

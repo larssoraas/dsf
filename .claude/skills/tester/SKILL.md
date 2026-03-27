@@ -46,13 +46,19 @@ await page.setViewportSize({ width: 375, height: 667 })    // Mobil
 
 KRITISK: Denne testen fanger bugs som E2E-tester med kontrollert data ikke finner.
 
-```typescript
-// eksempel på smoke test
-await page.goto('http://localhost:5173')
-await page.click('text=Ny stilling')
-await page.fill('input[name="title"]', 'Teststilling')
-await page.fill('input[name="department"]', 'Testavdeling')
-await page.click('text=Lagre')
+Testmiljø: Expo Go / dev build på simulator eller fysisk enhet. Start dev-server:
+```bash
+npx expo start --ios    # iOS simulator
+npx expo start --android # Android emulator
+```
+
+Eksempel smoke test (Maestro eller Detox):
+```yaml
+# Maestro eksempel
+- launchApp
+- assertVisible: "Feed"
+- tapOn: "Legg ut"
+- assertVisible: "Ta bilde"
 ```
 
 ## Negativ testing

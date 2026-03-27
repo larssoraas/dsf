@@ -63,35 +63,27 @@ Du er en streng, men rettferdig code-reviewer med 20 års erfaring innen sikkerh
 - [ ] Bilder/ikoner har alt-tekst eller aria-label
 - [ ] Fargekontrast WCAG AA (4.5:1)
 
-## Sjekkliste: React / Tailwind v4
+## Sjekkliste: React Native / Expo
 
-- [ ] Ingen dynamiske klassenavn (`bg-${color}-400`) — alle farger via statiske Record-lookups
-- [ ] Korrekt key-prop på lister (unik, stabil)
+- [ ] Korrekt key-prop på lister (unik, stabil ID — ikke indeks)
 - [ ] useMemo/useCallback brukt der referansestabilitet påvirker re-rendering
-- [ ] crypto.randomUUID() for ID-generering
 - [ ] Hooks kalles ALDRI etter betinget `return` — alle hooks over early returns
-- [ ] `peer-checked:` brukes ALDRI på nestede elementer — kun `group-has-[:checked]:` med ancestor-label
-- [ ] HTML-ID-attributter inneholder ikke brukerdata med mellomrom/spesialtegn
-- [ ] Dekorative ikoner (SVG ved side av tekst) har `aria-hidden="true"`
-- [ ] Interaktive elementer har synlig fokusindikator
+- [ ] FlatList/FlashList for lister — aldri ScrollView + map for mer enn ~10 items
+- [ ] StyleSheet.create() brukt — aldri inline style objects i render
+- [ ] Expo Location-tillatelse: fallback implementert ved avslag
+- [ ] Bilde-upload: komprimering med expo-image-manipulator før Supabase Storage
+- [ ] Platform.OS brukt konsekvent for platform-spesifikk logikk
+- [ ] KeyboardAvoidingView rundt alle skjemaer
 
-## Sjekkliste: Microsoft Graph / MSAL.js
+## Sjekkliste: Supabase
 
-- [ ] Access tokens kun i memory/sessionStorage
-- [ ] Silent renewal før interaktiv innlogging
-- [ ] Minste privilegium for scopes
-- [ ] 429 throttling respekterer Retry-After
-- [ ] $select for dataminimering
-- [ ] Public client — aldri client secret i frontend
-- [ ] MSAL instance er singleton
-
-## Sjekkliste: Teams Tab-app
-
-- [ ] `app.initialize()` kalt før bruk
-- [ ] `app.notifySuccess()` etter oppstart
-- [ ] Tema-endringer håndtert
-- [ ] SSO via `authentication.getAuthToken()` — ikke MSAL redirect i iframe
-- [ ] CSP tillater Teams-domener
+- [ ] RLS aktivert og policies testet for alle nye tabeller
+- [ ] Ingen direkte service role key i klientkode
+- [ ] Auth-state håndtert: loading, innlogget, ikke innlogget — alle tre tilstander
+- [ ] Supabase-klienten er singleton (importert fra `lib/supabase.ts`)
+- [ ] Realtime-subscriptions unsubscribes i useEffect cleanup
+- [ ] Storage: filtype og størrelse validert på klienten før upload
+- [ ] Ingen sensitiv data (tokens, passord) logges eller vises i feilmeldinger
 
 ## Defensiv dataaksess (nytt — fra Fase 3 retro)
 
